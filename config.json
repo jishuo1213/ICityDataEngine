@@ -1,0 +1,76 @@
+[
+  {
+    "id": "",
+    "interval": "1d",
+    "parallel_num": 4,
+    "request": {
+      "type": "http",
+      "url": "http://www.icity24.cn/icity/as/app/getYearBill",
+      "method": "get",
+      "params": [
+        "mobile"
+      ],
+      "params_config": [
+        {
+          "name": "mobile",
+          "data_source_type": 1,
+          "db_type": "mysql",
+          "user_name": "root",
+          "password": "123456a?",
+          "db_address": "172.22.16.139",
+          "db_name": "icity",
+          "table_name": "cust_customer",
+          "columns": "mobilePhone"
+        }
+      ]
+    },
+    "response_config": {
+      "save_type": 2,
+      "save_key": [
+        "mobile"
+      ],
+      "redis_ip": "172.22.16.144",
+      "redis_port": 6379,
+      "db_name": ""
+    }
+  },
+  {
+    "id": "",
+    "interval": "1d",
+    "parallel_num": 4,
+    "request": {
+      "url": "http://www.icity24.cn/icity/as/app/getYearBill",
+      "method": "post",
+      "body_type": "x-www-form-urlencoded",
+      "params": [
+        {
+          "name": "mobile"
+        }
+      ],
+      "params_config": [
+        {
+          "name": "mobile",
+          "data_source_type": 1,
+          "db_type": "mysql",
+          "user_name": "root",
+          "password": "123456a?",
+          "db_address": "172.22.16.139",
+          "db_name": "icity",
+          "table_name": "cust_customer",
+          "columns": [
+            "mobilePhone"
+          ]
+        }
+      ]
+    },
+    "response_config": {
+      "save_type": 2,
+      "save_key": [
+        "mobile"
+      ],
+      "redis_ip": "172.22.16.144",
+      "redis_port": 6379,
+      "db_name": ""
+    }
+  }
+]
