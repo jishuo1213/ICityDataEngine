@@ -9,6 +9,6 @@ type DataEngineJob struct {
 	ResponseConfig map[string]interface{}
 }
 
-func (job *DataEngineJob) Run() error {
+func (job *DataEngineJob) Run() {
 
 }

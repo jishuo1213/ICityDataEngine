@@ -12,6 +12,7 @@ func init() {
 	cron.Start()
 }
 
-func AddNewJob(job *job.DataEngineJob) error {
-	cron.AddJob()
+func AddNewJob(dataJob *job.DataEngineJob) error {
+
+	return cron.AddJob(dataJob.Interval, dataJob)
 }
