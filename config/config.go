@@ -80,13 +80,13 @@ func ParseConfig(config string) (*job.DataEngineJob, error) {
 	if err != nil {
 		return nil, err
 	}
-	id, err := jobConfig.Get("id").String()
+	//id, err := jobConfig.Get("id").String()
 	interval, err := jobConfig.Get("interval").String()
 	parallelNum, err := jobConfig.Get("parallel_num").Int()
 	requestConfig, err := jobConfig.Get("request").Map()
 	responseConfig, err := jobConfig.Get("response_config").Map()
 
-	return &job.DataEngineJob{Id: id, Interval: interval,
+	return &job.DataEngineJob{Interval: interval,
 		ParallelNum: parallelNum, RequestConfig: requestConfig, ResponseConfig: responseConfig}, nil
 
 }

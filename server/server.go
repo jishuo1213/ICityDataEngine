@@ -8,6 +8,8 @@ import (
 	"ICityDataEngine/config"
 	"ICityDataEngine/scheduler"
 	"ICityDataEngine/model"
+	"ICityDataEngine/repo"
+	"github.com/google/uuid"
 )
 
 func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps httprouter.Params) {
@@ -15,24 +17,40 @@ func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps http
 	case "add":
 		jobConfig, err := ioutil.ReadAll(request.Body)
 		if err != nil {
+			log.Error(err)
 			res := model.HttpRes{Code: 101, Data: nil}
 			writer.Write([]byte(res.String()))
 			return
 		}
 		job, err := config.ParseConfig(string(jobConfig))
+		job.Id = uuid.New().String()
 		if err != nil {
+			log.Error(err)
 			res := model.HttpRes{Code: 101, Data: nil}
 			writer.Write([]byte(res.String()))
+			return
 		}
-
+		_, err = repo.AddJob(job)
+		if err != nil {
+			log.Error(err)
+			res := model.HttpRes{Code: 103, Data: nil}
+			writer.Write([]byte(res.String()))
+			return
+		}
 		err = scheduler.AddNewJob(job)
 		if err != nil {
+			log.Error(err)
 			res := model.HttpRes{Code: 102, Data: nil}
 			writer.Write([]byte(res.String()))
+			return
 		}
 
+		data := make(map[string]interface{})
+		data["job_id"] = job.Id
 
+		res := model.HttpRes{Code: 100, Data: data}
 
+		writer.Write([]byte(res.String()))
 		break
 	case "delete":
 		break

@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"log"
+	"encoding/json"
 )
 
 func GetCurrentDirectory() string {
@@ -20,4 +21,13 @@ func CheckPanicError(err error) {
 	if err != nil {
 		log.Panic(err)
 	}
+}
+
+func ToJsonStr(data interface{}, defaultValue string) string {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return defaultValue
+	}
+
+	return string(jsonData)
 }
