@@ -2,26 +2,27 @@ package job
 
 import (
 	"ICityDataEngine/util"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type DataEngineJob struct {
 	//jobConfig *config.JobConfig
-	Id             string
-	Interval       string
-	ParallelNum    int
-	RequestConfig  map[string]interface{}
-	ResponseConfig map[string]interface{}
+	Id             bson.ObjectId          `bson:"_id"`
+	Interval       string                 `bson:"interval"`
+	ParallelNum    int                    `bson:"parallel_num"`
+	RequestConfig  map[string]interface{} `bson:"request_config"`
+	ResponseConfig map[string]interface{} `bson:"response_config"`
 }
 
 func (job *DataEngineJob) Run() {
-	requestType := string.(job.RequestConfig["type"])
-	switch requestType {
-	case "http":
-		url := string.(job.RequestConfig["url"])
-		method := string.(job.RequestConfig["method"])
-
-		break
-	}
+	//requestType := string.(job.RequestConfig["type"])
+	//switch requestType {
+	//case "http":
+	//	url := string.(job.RequestConfig["url"])
+	//	method := string.(job.RequestConfig["method"])
+	//
+	//	break
+	//}
 }
 
 func (job *DataEngineJob) GetRequestConfig() (string) {

@@ -9,7 +9,7 @@ import (
 	"ICityDataEngine/scheduler"
 	"ICityDataEngine/model"
 	"ICityDataEngine/repo"
-	"github.com/google/uuid"
+	"gopkg.in/mgo.v2/bson"
 )
 
 func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps httprouter.Params) {
@@ -23,14 +23,14 @@ func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps http
 			return
 		}
 		job, err := config.ParseConfig(string(jobConfig))
-		job.Id = uuid.New().String()
+		job.Id = bson.NewObjectId()
 		if err != nil {
 			log.Error(err)
 			res := model.HttpRes{Code: 101, Data: nil}
 			writer.Write([]byte(res.String()))
 			return
 		}
-		_, err = repo.AddJob(job)
+		err = repo.AddJob(job)
 		if err != nil {
 			log.Error(err)
 			res := model.HttpRes{Code: 103, Data: nil}
