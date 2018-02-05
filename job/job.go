@@ -1,8 +1,10 @@
 package job
 
 import (
-	"ICityDataEngine/util"
 	"gopkg.in/mgo.v2/bson"
+	"ICityDataEngine/repo"
+	"github.com/kataras/iris/core/errors"
+	"fmt"
 )
 
 type DataEngineJob struct {
@@ -12,10 +14,13 @@ type DataEngineJob struct {
 	ParallelNum    int                    `bson:"parallel_num"`
 	RequestConfig  map[string]interface{} `bson:"request_config"`
 	ResponseConfig map[string]interface{} `bson:"response_config"`
+	LastRunTime    int64                  `bson:"last_run_time"`
+	paramParser    repo.ParamParser
 }
 
 func (job *DataEngineJob) Run() {
-	//requestType := string.(job.RequestConfig["type"])
+	requestType := string.(job.RequestConfig["type"])
+	fmt.Println(requestType)
 	//switch requestType {
 	//case "http":
 	//	url := string.(job.RequestConfig["url"])
@@ -25,11 +30,16 @@ func (job *DataEngineJob) Run() {
 	//}
 }
 
-func (job *DataEngineJob) GetRequestConfig() (string) {
-	return util.ToJsonStr(job.RequestConfig, "{}")
-}
+func (job *DataEngineJob) InitJob() error {
+	requestType, ok := job.RequestConfig["type"].(string)
+	if !ok {
+		return errors.New("type is not string")
+	}
+	switch requestType {
+	case "http":
 
-func (job *DataEngineJob) GetResponseConfig() (string) {
-	//responseConfig, err := json.Marshal(job.RequestConfig)
-	return util.ToJsonStr(job.ResponseConfig, "{}")
+		break
+	default:
+		return errors.New("暂不支持" + requestType + "类型服务")
+	}
 }

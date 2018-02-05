@@ -5,7 +5,6 @@ import (
 )
 
 type MySqlConfig struct {
-	DBType      string
 	UserName    string
 	PassWord    string
 	DBAddress   string

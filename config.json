@@ -7,6 +7,16 @@
       "type": "http",
       "url": "http://www.icity24.cn/icity/as/app/getYearBill",
       "method": "get",
+      "headers_config": {
+        "headers_value_type": 0,
+        "headers": [
+          {
+            "name": "access_token"
+          },
+          {
+          }
+        ]
+      },
       "params_config": {
         "params_source_type": 0,
         //各个参数的设置是分离的

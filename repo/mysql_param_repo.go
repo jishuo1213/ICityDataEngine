@@ -7,21 +7,31 @@ import (
 	"ICityDataEngine/util"
 )
 
-func Query(config model.MySqlConfig) (error){
-	db, err := sql.Open("mysql", config.GetDBDataSource())
-	if err != nil {
-		util.CheckPanicError(err)
-	}
-	defer db.Close()
-	//rows := db.QueryRow(config.SqlSentence)
-	rows, err := db.Query(config.SqlSentence)
-	if err != nil {
-		return err
+func QueryAndParseParams(parser func(rows ...*sql.Rows) error, configs ... model.MySqlConfig) (error) {
+	rowsList := make([]*sql.Rows, 0, len(configs))
+	dbList := make([]*sql.DB, 0, len(configs))
+	defer func() {
+		for _, db := range dbList {
+			db.Close()
+		}
+		for _, rows := range rowsList {
+			rows.Close()
+		}
+	}()
+	for _, config := range configs {
+		db, err := sql.Open("mysql", config.GetDBDataSource())
+		if err != nil {
+			util.CheckPanicError(err)
+		}
+		dbList = append(dbList, db)
+		//defer db.Close()
+		rows, err := db.Query(config.SqlSentence)
+		rowsList = append(rowsList, rows)
+		//rows := db.QueryRow(config.SqlSentence)
+		if err != nil {
+			return err
+		}
 	}
 
-	var phone string
-	for rows.Next() {
-		rows.Scan(&phone)
-	}
-	return nil
+	return parser(rowsList...)
 }
