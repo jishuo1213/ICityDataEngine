@@ -7,39 +7,37 @@
       "type": "http",
       "url": "http://www.icity24.cn/icity/as/app/getYearBill",
       "method": "get",
-      "headers_config": {
-        "headers_value_type": 0,
-        "headers": [
-          {
-            "name": "access_token"
-          },
-          {
-          }
-        ]
-      },
-      "params_config": {
-        "params_source_type": 0,
-        //各个参数的设置是分离的
-        "params": [
+      "body_type": 1,
+      //1:application/x-www-form-urlencoded 2:json 3:form-data 4
+      "variables_config": {
+        "variables": [
           {
             "name": "mobile",
-            "value_type": 1,
-            //value_type数据来源类型,0：固定值 1:数据库 2:json文件
-            "db_config": {
-              "db_type": "mysql",
-              "user_name": "root",
-              "password": "123456a?",
-              "db_address": "172.22.16.139",
-              "db_name": "icity",
-              "sql": "SELECT mobilePhone from cust_customer"
-            }
+            "type": "body",
+            "from": "db",
+            "mapping_name": "mobile_phone"
           },
           {
-            "name": "cityCode",
-            "value_type": 0,
+            "name": "access_token",
+            "type": "header",
+            "from": "db",
+            "mapping_name": "access_token"
+          },
+          {
+            "name": "city_code",
+            "type": "header",
+            "from": "value",
             "value": "370100"
           }
-        ]
+        ],
+        "db_config": {
+          "db_type": "mysql",
+          "user_name": "root",
+          "password": "123456a?",
+          "db_address": "172.22.16.139",
+          "db_name": "icity",
+          "sql": "select mobile_phone,access_token from table cust_customer"
+        }
       }
     },
     "response_config": {
@@ -54,34 +52,45 @@
   },
   {
     "id": "",
-    "interval": "1d",
+    "interval": "* 0 * * *",
     "parallel_num": 4,
     "request": {
       "type": "http",
       "url": "http://www.icity24.cn/icity/as/app/getYearBill",
       "method": "get",
-      "params_config": {
-        "params_source_type": 1,
-        //各个参数的设置是整体设置的 参数整体来源 1:数据库（此时需要设置一个sql语句） 2：文件
+      "body_type": 1,
+      //1:application/x-www-form-urlencoded 2:json 3:form-data 4
+
+
+      "variables_config": {
+        "variables": [
+          {
+            "name": "mobile",
+            "type": "body",
+            "from": "db",
+            "mapping_name": "mobile_phone"
+          },
+          {
+            "name": "access_token",
+            "type": "header",
+            "from": "db",
+            "mapping_name": "access_token"
+          },
+          {
+            "name": "city_code",
+            "type": "header",
+            "from": "value",
+            "value": "370100"
+          }
+        ],
         "db_config": {
           "db_type": "mysql",
           "user_name": "root",
           "password": "123456a?",
           "db_address": "172.22.16.139",
           "db_name": "icity",
-          "port": 3306,
-          "sql": ""
-        },
-        "params": [
-          {
-            "name": "mobile",
-            "mapping_name": "mobilePhone"
-          },
-          {
-            "name": "cityCode",
-            "mapping_name": "cityCode"
-          }
-        ]
+          "sql": "select mobile_phone,access_token from table cust_customer"
+        }
       }
     },
     "response_config": {

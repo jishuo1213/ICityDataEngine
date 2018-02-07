@@ -5,11 +5,11 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"ICityDataEngine/log"
 	"io/ioutil"
-	"ICityDataEngine/config"
 	"ICityDataEngine/scheduler"
 	"ICityDataEngine/model"
 	"ICityDataEngine/repo"
 	"gopkg.in/mgo.v2/bson"
+	"ICityDataEngine/job"
 )
 
 func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps httprouter.Params) {
@@ -22,7 +22,7 @@ func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps http
 			writer.Write([]byte(res.String()))
 			return
 		}
-		job, err := config.ParseConfig(string(jobConfig))
+		job, err := job.ParseConfig(string(jobConfig))
 		if err != nil {
 			log.Error(err)
 			res := model.HttpRes{Code: model.ERR_PARSE_CONFIG, Msg: err.Error()}

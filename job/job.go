@@ -5,6 +5,7 @@ import (
 	"ICityDataEngine/repo"
 	"github.com/kataras/iris/core/errors"
 	"fmt"
+	"github.com/bitly/go-simplejson"
 )
 
 type DataEngineJob struct {
@@ -19,15 +20,45 @@ type DataEngineJob struct {
 }
 
 func (job *DataEngineJob) Run() {
+
 	requestType := string.(job.RequestConfig["type"])
 	fmt.Println(requestType)
-	//switch requestType {
-	//case "http":
-	//	url := string.(job.RequestConfig["url"])
-	//	method := string.(job.RequestConfig["method"])
-	//
-	//	break
-	//}
+}
+
+func initJobConfig(config string) (*simplejson.Json, error) {
+	js, err := simplejson.NewJson([]byte(config))
+	if err != nil {
+		return nil, err
+	}
+	return js, nil
+}
+
+func ParseConfig(config string) (*DataEngineJob, error) {
+	jobConfig, err := initJobConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	//id, err := jobConfig.Get("id").String()
+	interval, err := jobConfig.Get("interval").String()
+	if err != nil {
+		return nil, err
+	}
+	parallelNum, err := jobConfig.Get("parallel_num").Int()
+	if err != nil {
+		return nil, err
+	}
+	requestConfig, err := jobConfig.Get("request").Map()
+	if err != nil {
+		return nil, err
+	}
+	responseConfig, err := jobConfig.Get("response_config").Map()
+	if err != nil {
+		return nil, err
+	}
+
+	return &DataEngineJob{Interval: interval,
+		ParallelNum: parallelNum, RequestConfig: requestConfig, ResponseConfig: responseConfig}, nil
+
 }
 
 func (job *DataEngineJob) InitJob() error {
