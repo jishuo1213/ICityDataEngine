@@ -2,15 +2,15 @@ package model
 
 import (
 	"strconv"
-	"database/sql"
-	"ICityDataEngine/repo"
+	//"database/sql"
+	//"ICityDataEngine/repo"
 )
 
 type SqlParamConfig interface {
 	GetDBDataSource() string
 	GetSqlSentence() string
 	GetDBType() string
-	QueryAndParseParams(parser func(rows ...*sql.Rows) error) error //查询并处理查询出来的参数
+	//QueryAndParseParams(parser func(rows ...*sql.Rows) error) error //查询并处理查询出来的参数
 }
 
 type MySqlConfig struct {
@@ -35,6 +35,6 @@ func (config *MySqlConfig) GetDBType() string {
 	return "mysql"
 }
 
-func (config *MySqlConfig) QueryAndParseParams(parser func(rows ...*sql.Rows) error) error {
-	return repo.QueryMySqlParams(parser, config)
-}
+//func (config *MySqlConfig) QueryAndParseParams(parser func(rows ...*sql.Rows) error) error {
+//	return repo.QuerySqlParams(parser, config)
+//}

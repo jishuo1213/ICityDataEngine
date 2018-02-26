@@ -1,8 +1,6 @@
 package config
 
 import (
-	"github.com/bitly/go-simplejson"
-	"ICityDataEngine/job"
 )
 
 //

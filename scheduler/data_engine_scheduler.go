@@ -2,7 +2,7 @@ package scheduler
 
 import (
 	cron2 "github.com/robfig/cron"
-	"ICityDataEngine/job"
+	"ICityDataEngine/model"
 )
 
 var cron *cron2.Cron
@@ -12,6 +12,6 @@ func init() {
 	cron.Start()
 }
 
-func AddNewJob(dataJob *job.DataEngineJob) error {
+func AddNewJob(dataJob *model.HttpDataEngineJob) error {
 	return cron.AddJob(dataJob.Interval, dataJob)
 }

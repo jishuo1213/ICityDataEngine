@@ -1,12 +1,12 @@
 package repo
 
 import (
-	"ICityDataEngine/job"
 	"gopkg.in/mgo.v2"
 	"ICityDataEngine/util"
+	"ICityDataEngine/model"
 )
 
-func AddJob(job *job.DataEngineJob) (error) {
+func AddJob(job *model.HttpDataEngineJob) (error) {
 	//tx, err := db.Begin()
 	//if err != nil {
 	//	return 0, err

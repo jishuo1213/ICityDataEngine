@@ -9,7 +9,7 @@ import (
 	"ICityDataEngine/model"
 	"ICityDataEngine/repo"
 	"gopkg.in/mgo.v2/bson"
-	"ICityDataEngine/job"
+	"fmt"
 )
 
 func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps httprouter.Params) {
@@ -22,22 +22,22 @@ func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps http
 			writer.Write([]byte(res.String()))
 			return
 		}
-		job, err := job.ParseConfig(string(jobConfig))
+		engineJob, err := model.ParseConfig(string(jobConfig))
 		if err != nil {
 			log.Error(err)
 			res := model.HttpRes{Code: model.ERR_PARSE_CONFIG, Msg: err.Error()}
 			writer.Write([]byte(res.String()))
 			return
 		}
-		job.Id = bson.NewObjectId()
-		err = repo.AddJob(job)
+		engineJob.Id = bson.NewObjectId()
+		err = repo.AddJob(engineJob)
 		if err != nil {
 			log.Error(err)
 			res := model.HttpRes{Code: model.ERR_INSERT_JOB, Msg: err.Error()}
 			writer.Write([]byte(res.String()))
 			return
 		}
-		err = scheduler.AddNewJob(job)
+		err = scheduler.AddNewJob(engineJob)
 		if err != nil {
 			log.Error(err)
 			res := model.HttpRes{Code: model.ERR_ADD_SCHEDULER, Msg: err.Error()}
@@ -46,7 +46,7 @@ func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps http
 		}
 
 		data := make(map[string]interface{})
-		data["job_id"] = job.Id
+		data["job_id"] = engineJob.Id
 
 		res := model.HttpRes{Code: model.SUCCESS, Data: data}
 
@@ -65,5 +65,6 @@ func Start() {
 		log.Info("request-----end")
 	}))
 
+	fmt.Println("start server======================")
 	http.ListenAndServe(":1215", router)
 }

@@ -7,7 +7,7 @@ import (
 	"ICityDataEngine/util"
 )
 
-func QueryMySqlParams(parser func(rows ...*sql.Rows) error, configs ... model.SqlParamConfig) (error) {
+func QuerySqlParams(parser func(rows ...*sql.Rows) error, configs ... model.SqlParamConfig) (error) {
 	rowsList := make([]*sql.Rows, 0, len(configs))
 	dbList := make([]*sql.DB, 0, len(configs))
 	defer func() {

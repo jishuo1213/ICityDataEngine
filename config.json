@@ -6,27 +6,26 @@
     "request": {
       "type": "http",
       "url": "http://www.icity24.cn/icity/as/app/getYearBill",
-      "method": "get",
-      "body_type": 1,
-      //1:application/x-www-form-urlencoded 2:json 3:form-data 4
+      "method": 1,//1:get 2:post
+      "body_type": 1, //1:application/x-www-form-urlencoded 2:json 3:form-data 4
       "variables_config": {
         "variables": [
           {
             "name": "mobile",
-            "type": "body",
-            "from": "db",
+            "type": 1,//1:body 2:header
+            "from": 1,
             "mapping_name": "mobile_phone"
           },
           {
             "name": "access_token",
-            "type": "header",
-            "from": "db",
+            "type": 2,
+            "from": 1,//1 db 2 固定值
             "mapping_name": "access_token"
           },
           {
             "name": "city_code",
-            "type": "header",
-            "from": "value",
+            "type": 2,
+            "from": 2,
             "value": "370100"
           }
         ],
@@ -34,7 +33,8 @@
           "db_type": "mysql",
           "user_name": "root",
           "password": "123456a?",
-          "db_address": "172.22.16.139",
+          "db_ip": "172.22.16.139",
+          "port":3306,
           "db_name": "icity",
           "sql": "select mobile_phone,access_token from table cust_customer"
         }
