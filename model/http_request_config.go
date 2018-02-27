@@ -8,29 +8,30 @@ import (
 )
 
 type HttpVariables struct {
-	Name      string                   `bson:"name"`
-	Type      constant.HTTP_PARAM_FROM `bson:"type"` //类型：包含两大类，固定值和非固定值 固定值0 数据库1 文件2
-	Value     string                   `bson:"value"`
-	DBMapping string                   `bson:"mapping_name"`
+	Name      string                 `bson:"name"`
+	Type      constant.HttpParamFrom `bson:"type"` //类型：包含两大类，固定值和非固定值 固定值0 数据库1 文件2
+	Value     string                 `bson:"value"`
+	DBMapping string                 `bson:"mapping_name"`
 }
 
 type HttpRequestConfig struct {
-	Url         string                `bson:"url"`
-	Method      constant.HTTP_METHOD  `bson:"method"`
-	ContentType constant.CONTENT_TYPE `bson:"content_type"`
-	Headers     []*HttpVariables      `bson:"headers"`
-	Params      []*HttpVariables      `bson:"params"`
-	SqlConfig   SqlParamConfig        `bson:"sql_config"`
+	Url         string               `bson:"url"`
+	Method      constant.HttpMethod  `bson:"method"`
+	ContentType constant.ContentType `bson:"content_type"`
+	Headers     []*HttpVariables     `bson:"headers"`
+	Params      []*HttpVariables     `bson:"params"`
+	SqlConfig   SqlParamConfig       `bson:"sql_config"`
+	Id          string               `bson:"-"`
 }
 
-func NewHttpRequestConfig(requestConfig *simplejson.Json) (*HttpRequestConfig, error) {
-	var config = &HttpRequestConfig{}
+func NewHttpRequestConfig(requestConfig *simplejson.Json, id string) (*HttpRequestConfig, error) {
+	var config = &HttpRequestConfig{Id: id}
 
-	url, err := requestConfig.Get("url").String()
+	requestUrl, err := requestConfig.Get("url").String()
 	if err != nil {
 		return nil, errors.New("request_config中url不存在或类型错误")
 	}
-	config.Url = url
+	config.Url = requestUrl
 
 	method, err := requestConfig.Get("method").Int()
 	if err != nil {
@@ -45,6 +46,17 @@ func NewHttpRequestConfig(requestConfig *simplejson.Json) (*HttpRequestConfig, e
 			return nil, errors.New("request_config中body_type不存在或类型错误")
 		}
 		config.ContentType = bodyType
+		switch bodyType {
+		case constant.BODY_XFORM_TYPE:
+			config.Headers = append(config.Headers, &HttpVariables{"Content-Type", constant.VALUE, "application/x-www-form-urlencoded", ""})
+			break
+		case constant.BODY_JSON_TYPE:
+			break
+		case constant.BODY_FORM_TYPE:
+			break
+		default:
+			return nil, errors.New("不支持的请求体类型")
+		}
 		break
 	case constant.GET:
 		break
@@ -112,6 +124,9 @@ func NewHttpRequestConfig(requestConfig *simplejson.Json) (*HttpRequestConfig, e
 				case constant.HEADER:
 					config.Headers = append(config.Headers, &httpParam)
 					break
+				default:
+					return nil, errors.New("请问除了body(1)和header(2)你还想在哪传参数？")
+					break
 				}
 			}
 		}
@@ -140,11 +155,11 @@ func NewHttpRequestConfig(requestConfig *simplejson.Json) (*HttpRequestConfig, e
 				if !success {
 					return nil, errors.New("db_name不存在或格式错误,应该为string")
 				}
-				sql, success := sqlConfig["sql"].(string)
+				sqlSentence, success := sqlConfig["sql"].(string)
 				if !success {
 					return nil, errors.New("sql不存在或格式错误,应该为string")
 				}
-				config.SqlConfig = &MySqlConfig{userName, password, dbIP, int(dbPort), dbName, sql}
+				config.SqlConfig = &MySqlConfig{userName, password, dbIP, int(dbPort), dbName, sqlSentence}
 				break
 			default:
 				return nil, errors.New("不支持的数据库类型")
@@ -156,7 +171,3 @@ func NewHttpRequestConfig(requestConfig *simplejson.Json) (*HttpRequestConfig, e
 
 	return config, nil
 }
-
-//func (config *HttpRequestConfig) GenerateRequest() error {
-//	http.Request{}
-//}

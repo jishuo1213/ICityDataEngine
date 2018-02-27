@@ -7,9 +7,14 @@ import (
 	"ICityDataEngine/util"
 )
 
-func QuerySqlParams(parser func(rows ...*sql.Rows) error, configs ... model.SqlParamConfig) (error) {
-	rowsList := make([]*sql.Rows, 0, len(configs))
-	dbList := make([]*sql.DB, 0, len(configs))
+
+
+func QuerySqlParams(parser func(rows *sql.Rows) error, config model.SqlParamConfig) (error) {
+	if config == nil {
+		return parser(nil)
+	}
+	rowsList := make([]*sql.Rows, 0, 1)
+	dbList := make([]*sql.DB, 0, 1)
 	defer func() {
 		for _, db := range dbList {
 			db.Close()
@@ -18,19 +23,19 @@ func QuerySqlParams(parser func(rows ...*sql.Rows) error, configs ... model.SqlP
 			rows.Close()
 		}
 	}()
-	for _, config := range configs {
-		db, err := sql.Open(config.GetDBType(), config.GetDBDataSource())
-		if err != nil {
-			util.CheckPanicError(err)
-		}
-		dbList = append(dbList, db)
-		//defer db.Close()
-		rows, err := db.Query(config.GetSqlSentence())
-		rowsList = append(rowsList, rows)
-		//rows := db.QueryRow(config.SqlSentence)
-		if err != nil {
-			return err
-		}
+	//for _, config := range configs {
+	db, err := sql.Open(config.GetDBType(), config.GetDBDataSource())
+	if err != nil {
+		util.CheckPanicError(err)
 	}
-	return parser(rowsList...)
+	dbList = append(dbList, db)
+	//defer db.Close()
+	rows, err := db.Query(config.GetSqlSentence())
+	rowsList = append(rowsList, rows)
+	//rows := db.QueryRow(config.SqlSentence)
+	if err != nil {
+		return err
+	}
+	//}
+	return parser(rowsList[0])
 }

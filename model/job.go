@@ -31,7 +31,7 @@ func initJobConfig(config string) (*simplejson.Json, error) {
 	return js, nil
 }
 
-func ParseConfig(config string) (*HttpDataEngineJob, error) {
+func ParseConfig(config string, id string) (*HttpDataEngineJob, error) {
 	jobConfig, err := initJobConfig(config)
 	if err != nil {
 		return nil, errors.New("json格式解析失败")
@@ -59,7 +59,7 @@ func ParseConfig(config string) (*HttpDataEngineJob, error) {
 	switch requestType {
 	case "http":
 		var err error
-		httpRequestConfig, err = NewHttpRequestConfig(requestConfig)
+		httpRequestConfig, err = NewHttpRequestConfig(requestConfig, id)
 		if err != nil {
 			return nil, err
 		}

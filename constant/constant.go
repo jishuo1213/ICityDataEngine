@@ -4,10 +4,10 @@ const DEBUG bool = true
 
 //const name  =
 
-type CONTENT_TYPE = int
-type HTTP_METHOD = int
-type HTTP_PARAM_TYPE = int
-type HTTP_PARAM_FROM = int
+type ContentType = int
+type HttpMethod = int
+type HttpParamType = int
+type HttpParamFrom = int
 
 const (
 	BODY_XFORM_TYPE = 1
@@ -28,3 +28,6 @@ const (
 	DB    = 1
 	VALUE = 2
 )
+
+const CMSP_IP = "172.22.16.138"
+const CMSP_PORT = 1216

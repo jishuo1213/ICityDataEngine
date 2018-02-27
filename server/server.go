@@ -22,14 +22,15 @@ func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps http
 			writer.Write([]byte(res.String()))
 			return
 		}
-		engineJob, err := model.ParseConfig(string(jobConfig))
+		jobId := bson.NewObjectId()
+		engineJob, err := model.ParseConfig(string(jobConfig), jobId.String())
 		if err != nil {
 			log.Error(err)
 			res := model.HttpRes{Code: model.ERR_PARSE_CONFIG, Msg: err.Error()}
 			writer.Write([]byte(res.String()))
 			return
 		}
-		engineJob.Id = bson.NewObjectId()
+		engineJob.Id = jobId
 		err = repo.AddJob(engineJob)
 		if err != nil {
 			log.Error(err)

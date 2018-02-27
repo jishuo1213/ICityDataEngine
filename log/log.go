@@ -9,10 +9,8 @@ import (
 
 var infoLogger *log.Logger
 var errorLogger *log.Logger
-//var infoLogger *log.Logger
 
 func init() {
-	//fileName := "DateEngine.out"
 	var writer io.Writer
 	if constant.DEBUG {
 		writer = os.Stdout
