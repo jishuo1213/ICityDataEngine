@@ -1,6 +1,8 @@
 package main
 
-import "ICityDataEngine/server"
+import (
+	"ICityDataEngine/server"
+)
 
 func main() {
 	server.Start()

@@ -26,7 +26,8 @@
             "name": "city_code",
             "type": 2,
             "from": 2,
-            "value": "370100"
+            "value": "370100",
+            "json_type":"int"
           }
         ],
         "db_config": {

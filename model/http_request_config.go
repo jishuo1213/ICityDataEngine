@@ -12,6 +12,7 @@ type HttpVariables struct {
 	Type      constant.HttpParamFrom `bson:"type"` //类型：包含两大类，固定值和非固定值 固定值0 数据库1 文件2
 	Value     string                 `bson:"value"`
 	DBMapping string                 `bson:"mapping_name"`
+	DataType  string                 `bson:"data_type"` //数据在json中的类型，有 int double string boolean四种 默认string
 }
 
 type HttpRequestConfig struct {
@@ -48,11 +49,17 @@ func NewHttpRequestConfig(requestConfig *simplejson.Json, id string) (*HttpReque
 		config.ContentType = bodyType
 		switch bodyType {
 		case constant.BODY_XFORM_TYPE:
-			config.Headers = append(config.Headers, &HttpVariables{"Content-Type", constant.VALUE, "application/x-www-form-urlencoded", ""})
+			config.Headers = append(config.Headers, &HttpVariables{"Content-Type", constant.VALUE,
+				"application/x-www-form-urlencoded", "", ""})
 			break
 		case constant.BODY_JSON_TYPE:
+			config.Headers = append(config.Headers, &HttpVariables{"Content-Type", constant.VALUE,
+				"application/json", "", ""})
 			break
 		case constant.BODY_FORM_TYPE:
+			//----WebKitFormBoundary7MA4YWxkTrZu0gW
+			//config.Headers = append(config.Headers, &HttpVariables{"Content-Type", constant.VALUE,
+			//	"multipart/form-data; boundary=----" + config.Id, "", ""})
 			break
 		default:
 			return nil, errors.New("不支持的请求体类型")
@@ -111,6 +118,15 @@ func NewHttpRequestConfig(requestConfig *simplejson.Json, id string) (*HttpReque
 					break
 				default:
 					return nil, errors.New("参数来源" + paramName + "未知")
+				}
+
+				if config.ContentType == constant.BODY_JSON_TYPE {
+					dataType, success := param["data_type"].(string)
+					if success {
+						httpParam.DataType = dataType
+					} else {
+						httpParam.DataType = "string"
+					}
 				}
 
 				paramType, err := param["type"].(json.Number).Int64()

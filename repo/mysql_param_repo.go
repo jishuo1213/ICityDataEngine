@@ -4,10 +4,8 @@ import (
 	"ICityDataEngine/model"
 	_ "github.com/go-sql-driver/mysql"
 	"database/sql"
-	"ICityDataEngine/util"
+	"IcityMessageBus/utils"
 )
-
-
 
 func QuerySqlParams(parser func(rows *sql.Rows) error, config model.SqlParamConfig) (error) {
 	if config == nil {
@@ -26,7 +24,7 @@ func QuerySqlParams(parser func(rows *sql.Rows) error, config model.SqlParamConf
 	//for _, config := range configs {
 	db, err := sql.Open(config.GetDBType(), config.GetDBDataSource())
 	if err != nil {
-		util.CheckPanicError(err)
+		utils.CheckPanicError(err)
 	}
 	dbList = append(dbList, db)
 	//defer db.Close()

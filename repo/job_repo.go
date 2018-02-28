@@ -2,8 +2,8 @@ package repo
 
 import (
 	"gopkg.in/mgo.v2"
-	"ICityDataEngine/util"
 	"ICityDataEngine/model"
+	"IcityMessageBus/utils"
 )
 
 func AddJob(job *model.HttpDataEngineJob) (error) {
@@ -29,7 +29,7 @@ func AddJob(job *model.HttpDataEngineJob) (error) {
 	defer session.Close()
 
 	if err != nil {
-		util.CheckPanicError(err)
+		utils.CheckPanicError(err)
 	}
 
 	c := session.DB("ICityDataEngine").C("job")

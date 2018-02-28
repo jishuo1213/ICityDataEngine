@@ -3,13 +3,13 @@ package repo
 import (
 	"testing"
 	"database/sql"
-	"ICityDataEngine/util"
 	_ "github.com/go-sql-driver/mysql"
 	"ICityDataEngine/model"
 	"flag"
 	"os"
 	"log"
 	"fmt"
+	"IcityMessageBus/utils"
 )
 
 func TestMain(m *testing.M) {
@@ -22,18 +22,14 @@ func TestMain(m *testing.M) {
 	os.Exit(ret)
 }
 
-type SqlString struct {
-	a string
-}
-
 func Test_Query(t *testing.T) {
 	config := model.MySqlConfig{UserName: "root", PassWord: "123456a?",
-		DBAddress: "172.22.16.139", Port: 3306, DBName: "icity", SqlSentence: "SELECT custId, mobilePhone,idCard FROM cust_customer_check"}
+		DBAddress: "172.22.16.139", Port: 3306, DBName: "icity", SqlSentence: "SELECT * FROM cust_customer_check where mobilePhone = '15069085636'"}
 
 	t.Log(config.GetDBDataSource())
 	db, err := sql.Open("mysql", config.GetDBDataSource())
 	if err != nil {
-		util.CheckPanicError(err)
+		utils.CheckPanicError(err)
 	}
 	defer db.Close()
 	//rows := db.QueryRow(config.SqlSentence)
@@ -53,7 +49,9 @@ func Test_Query(t *testing.T) {
 	//result = append(result, reflect.ValueOf(value).FieldByName(strings.Title("a")).Addr().Interface())
 	//reflect.ValueOf().FieldByName().Addr().Interface()
 	cols, _ := rows.Columns()
-	rc := NewMapStringScan(cols)
+	log.Println(cols)
+	rc := newMapStringScan(cols)
+
 	for rows.Next() {
 		//fmt.Println(rows.Columns())
 		////rows.Scan()
@@ -79,74 +77,39 @@ func Test_Query(t *testing.T) {
 		cv := rc.Get()
 		log.Printf("%#v\n\n", cv)
 
+		/*		columns := make([]interface{}, len(cols))
+				columnPointers := make([]interface{}, len(cols))
+				for i := range columns {
+					columnPointers[i] = &columns[i]
+				}
 
-/*		columns := make([]interface{}, len(cols))
-		columnPointers := make([]interface{}, len(cols))
-		for i := range columns {
-			columnPointers[i] = &columns[i]
-		}
+				// Scan the result into the column pointers...
+				if err := rows.Scan(columnPointers...); err != nil {
+					fmt.Println(err)
+					return
+				}
 
-		// Scan the result into the column pointers...
-		if err := rows.Scan(columnPointers...); err != nil {
-			fmt.Println(err)
-			return
-		}
+				// Create our map, and retrieve the value for each column from the pointers slice,
+				// storing it in the map with the name of the column as the key.
+				m := make(map[string]interface{})
+				for i, colName := range cols {
+					val := columnPointers[i].(*interface{})
+					fmt.Println(reflect.TypeOf(*val))
+					m[colName] = *val
+				}
 
-		// Create our map, and retrieve the value for each column from the pointers slice,
-		// storing it in the map with the name of the column as the key.
-		m := make(map[string]interface{})
-		for i, colName := range cols {
-			val := columnPointers[i].(*interface{})
-			fmt.Println(reflect.TypeOf(*val))
-			m[colName] = *val
-		}
-
-		// Outputs: map[columnName:value columnName2:value2 columnName3:value3 ...]
-		fmt.Println(m["mobilePhone"].(string))*/
+				// Outputs: map[columnName:value columnName2:value2 columnName3:value3 ...]
+				fmt.Println(m["mobilePhone"].(string))*/
 	}
 	//t.Error(count)
 	log.Println(count)
 }
 
-type mapStringScan struct {
-	// cp are the column pointers
-	cp []interface{}
-	// row contains the final result
-	row      map[string]string
-	colCount int
-	colNames []string
-}
-
-func NewMapStringScan(columnNames []string) *mapStringScan {
-	lenCN := len(columnNames)
-	s := &mapStringScan{
-		cp:       make([]interface{}, lenCN),
-		row:      make(map[string]string, lenCN),
-		colCount: lenCN,
-		colNames: columnNames,
-	}
-	for i := 0; i < lenCN; i++ {
-		s.cp[i] = new(sql.RawBytes)
-	}
-	return s
-}
-
-func (s *mapStringScan) Update(rows *sql.Rows) error {
-	if err := rows.Scan(s.cp...); err != nil {
-		return err
-	}
-
-	for i := 0; i < s.colCount; i++ {
-		if rb, ok := s.cp[i].(*sql.RawBytes); ok {
-			s.row[s.colNames[i]] = string(*rb)
-			*rb = nil // reset pointer to discard current value to avoid a bug
-		} else {
-			return fmt.Errorf("Cannot convert index %d column %s to type *sql.RawBytes", i, s.colNames[i])
-		}
-	}
-	return nil
-}
-
-func (s *mapStringScan) Get() map[string]string {
-	return s.row
-}
+//type mapStringScan struct {
+//	// cp are the column pointers
+//	cp []interface{}
+//	// row contains the final result
+//	row      map[string]string
+//	colCount int
+//	colNames []string
+//}
