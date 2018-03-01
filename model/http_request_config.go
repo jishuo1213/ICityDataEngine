@@ -5,9 +5,12 @@ import (
 	"ICityDataEngine/constant"
 	"github.com/kataras/iris/core/errors"
 	"encoding/json"
+	"strconv"
+	"log"
+	"ICityDataEngine/i"
 )
 
-type HttpVariables struct {
+type httpVariables struct {
 	Name      string                 `bson:"name"`
 	Type      constant.HttpParamFrom `bson:"type"` //类型：包含两大类，固定值和非固定值 固定值0 数据库1 文件2
 	Value     string                 `bson:"value"`
@@ -15,18 +18,123 @@ type HttpVariables struct {
 	DataType  string                 `bson:"data_type"` //数据在json中的类型，有 int double string boolean四种 默认string
 }
 
-type HttpRequestConfig struct {
+type httpRequestConfig struct {
 	Url         string               `bson:"url"`
 	Method      constant.HttpMethod  `bson:"method"`
 	ContentType constant.ContentType `bson:"content_type"`
-	Headers     []*HttpVariables     `bson:"headers"`
-	Params      []*HttpVariables     `bson:"params"`
-	SqlConfig   SqlParamConfig       `bson:"sql_config"`
+	Headers     []*httpVariables     `bson:"headers"`
+	Params      []*httpVariables     `bson:"params"`
+	SqlConfig   i.ISqlParamConfig    `bson:"sql_config"`
 	Id          string               `bson:"-"`
 }
 
-func NewHttpRequestConfig(requestConfig *simplejson.Json, id string) (*HttpRequestConfig, error) {
-	var config = &HttpRequestConfig{Id: id}
+func (config *httpRequestConfig) GetId() string {
+	return config.Id
+}
+
+func (config *httpRequestConfig) GetMethod() constant.HttpMethod {
+	return config.Method
+}
+
+func (config *httpRequestConfig) GetContentType() constant.ContentType {
+	return config.ContentType
+}
+func (config *httpRequestConfig) GetUrl() string {
+	return config.Url
+}
+func (config *httpRequestConfig) GetSqlConfig() i.ISqlParamConfig {
+	return config.SqlConfig
+}
+
+func (config *httpRequestConfig) InitValueHeaders() (map[string]string, map[string]string) {
+	return initHttpVariables(config.Headers)
+}
+
+func (config *httpRequestConfig) InitValueParams() (map[string]string, map[string]string) {
+	return initHttpVariables(config.Params)
+}
+
+func (config *httpRequestConfig) GenerateJsonBody(values map[string]string) (map[string]interface{}, error) {
+	if config.ContentType != constant.BodyJsonType {
+		return nil, errors.New("别乱调方法")
+	}
+	res := make(map[string]interface{})
+	for _, variable := range config.Params {
+		if variable.Type != constant.DB {
+			continue
+		}
+		if value, ok := values[variable.Name]; ok {
+			switch variable.DataType {
+			case "int":
+				v, err := strconv.Atoi(value)
+				if err != nil {
+					return nil, errors.New(variable.Name + "类型转换失败," + value + err.Error())
+				}
+				res[variable.Name] = v
+				break
+			case "double":
+				v, err := strconv.ParseFloat(value, 64)
+				if err != nil {
+					return nil, errors.New(variable.Name + "类型转换失败," + value + err.Error())
+				}
+				res[variable.Name] = v
+				break
+			case "boolean":
+				v, err := strconv.ParseBool(value)
+				if err != nil {
+					return nil, errors.New(variable.Name + "类型转换失败," + value + err.Error())
+				}
+				res[variable.Name] = v
+				break
+			case "string":
+				res[variable.Name] = value
+				break
+			}
+		} else {
+			return nil, errors.New(variable.Name + "在数据库中没查出来")
+		}
+
+	}
+	return res, nil
+}
+
+func initHttpVariables(initArg []*httpVariables) (map[string]string, map[string]string) {
+	if len(initArg) > 0 {
+		if valueHeaders, DbMapping := separateValues(initArg); valueHeaders != nil {
+			requestHeaders := make(map[string]string)
+			for key, value := range valueHeaders {
+				requestHeaders[key] = value
+			}
+			return requestHeaders, DbMapping
+		} else {
+			return nil, DbMapping
+		}
+	}
+	return nil, nil
+}
+
+func separateValues(params []*httpVariables) (map[string]string, map[string]string) {
+	values := make(map[string]string)
+	dbMapping := make(map[string]string)
+	for _, header := range params {
+		if header.Type == constant.Value {
+			values[header.Name] = header.Value
+		} else if header.Type == constant.DB {
+			dbMapping[header.Name] = header.DBMapping
+		}
+	}
+	if len(values) == 0 {
+		values = nil
+	}
+	if len(dbMapping) == 0 {
+		dbMapping = nil
+	}
+
+	return values, dbMapping
+}
+
+func NewHttpRequestConfig(requestConfig *simplejson.Json, id string) (*httpRequestConfig, error) {
+	var config = &httpRequestConfig{Id: id}
 
 	requestUrl, err := requestConfig.Get("url").String()
 	if err != nil {
@@ -41,31 +149,31 @@ func NewHttpRequestConfig(requestConfig *simplejson.Json, id string) (*HttpReque
 	config.Method = method
 
 	switch method {
-	case constant.POST:
+	case constant.Post:
 		bodyType, err := requestConfig.Get("body_type").Int()
 		if err != nil {
 			return nil, errors.New("request_config中body_type不存在或类型错误")
 		}
 		config.ContentType = bodyType
 		switch bodyType {
-		case constant.BODY_XFORM_TYPE:
-			config.Headers = append(config.Headers, &HttpVariables{"Content-Type", constant.VALUE,
+		case constant.BodyXFormType:
+			config.Headers = append(config.Headers, &httpVariables{"Content-Type", constant.Value,
 				"application/x-www-form-urlencoded", "", ""})
 			break
-		case constant.BODY_JSON_TYPE:
-			config.Headers = append(config.Headers, &HttpVariables{"Content-Type", constant.VALUE,
+		case constant.BodyJsonType:
+			config.Headers = append(config.Headers, &httpVariables{"Content-Type", constant.Value,
 				"application/json", "", ""})
 			break
-		case constant.BODY_FORM_TYPE:
+		case constant.BodyFormType:
 			//----WebKitFormBoundary7MA4YWxkTrZu0gW
-			//config.Headers = append(config.Headers, &HttpVariables{"Content-Type", constant.VALUE,
+			//config.Headers = append(config.Headers, &httpVariables{"Content-Type", constant.Value,
 			//	"multipart/form-data; boundary=----" + config.Id, "", ""})
 			break
 		default:
 			return nil, errors.New("不支持的请求体类型")
 		}
 		break
-	case constant.GET:
+	case constant.Get:
 		break
 	default:
 		return nil, errors.New("不支持的http的method类型")
@@ -85,7 +193,7 @@ func NewHttpRequestConfig(requestConfig *simplejson.Json, id string) (*HttpReque
 				if !success {
 					return nil, errors.New("http请求参数设置json格式错误2")
 				}
-				var httpParam HttpVariables
+				var httpParam httpVariables
 				paramName, success := param["name"].(string)
 				if !success {
 					return nil, errors.New("name不存在或格式错误,应该为string")
@@ -93,7 +201,7 @@ func NewHttpRequestConfig(requestConfig *simplejson.Json, id string) (*HttpReque
 				httpParam.Name = paramName
 
 				//log.Println(reflect.TypeOf(param["from"]))
-				paramFrom, err := param["from"].(json.Number).Int64()
+				paramFrom, err := param["data_from"].(json.Number).Int64()
 				if err != nil {
 					return nil, errors.New("from不存在或格式错误,应该为int")
 				}
@@ -109,7 +217,7 @@ func NewHttpRequestConfig(requestConfig *simplejson.Json, id string) (*HttpReque
 					}
 					httpParam.DBMapping = paramMappingName
 					break
-				case constant.VALUE:
+				case constant.Value:
 					paramValue, success := param["value"].(string)
 					if !success {
 						return nil, errors.New("value不存在或格式错误,应该为string")
@@ -120,7 +228,7 @@ func NewHttpRequestConfig(requestConfig *simplejson.Json, id string) (*HttpReque
 					return nil, errors.New("参数来源" + paramName + "未知")
 				}
 
-				if config.ContentType == constant.BODY_JSON_TYPE {
+				if config.ContentType == constant.BodyJsonType {
 					dataType, success := param["data_type"].(string)
 					if success {
 						httpParam.DataType = dataType
@@ -129,10 +237,11 @@ func NewHttpRequestConfig(requestConfig *simplejson.Json, id string) (*HttpReque
 					}
 				}
 
-				paramType, err := param["type"].(json.Number).Int64()
+				paramType, err := param["data_to"].(json.Number).Int64()
 				if err != nil {
 					return nil, errors.New("name不存在或格式错误,应该为int")
 				}
+				log.Println(httpParam.Name+":", paramType)
 				switch paramType {
 				case constant.BODY:
 					config.Params = append(config.Params, &httpParam)

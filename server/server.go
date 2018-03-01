@@ -3,13 +3,12 @@ package server
 import (
 	"net/http"
 	"github.com/julienschmidt/httprouter"
-	"ICityDataEngine/log"
 	"io/ioutil"
 	"ICityDataEngine/scheduler"
 	"ICityDataEngine/model"
 	"ICityDataEngine/repo"
 	"gopkg.in/mgo.v2/bson"
-	"fmt"
+	"ICityDataEngine/logger"
 )
 
 func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps httprouter.Params) {
@@ -17,7 +16,7 @@ func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps http
 	case "add":
 		jobConfig, err := ioutil.ReadAll(request.Body)
 		if err != nil {
-			log.Error(err)
+			logger.Error(err)
 			res := model.HttpRes{Code: model.ERR_SERVER, Msg: err.Error()}
 			writer.Write([]byte(res.String()))
 			return
@@ -25,7 +24,7 @@ func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps http
 		jobId := bson.NewObjectId()
 		engineJob, err := model.ParseConfig(string(jobConfig), jobId.String())
 		if err != nil {
-			log.Error(err)
+			logger.Error(err)
 			res := model.HttpRes{Code: model.ERR_PARSE_CONFIG, Msg: err.Error()}
 			writer.Write([]byte(res.String()))
 			return
@@ -33,14 +32,14 @@ func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps http
 		engineJob.Id = jobId
 		err = repo.AddJob(engineJob)
 		if err != nil {
-			log.Error(err)
+			logger.Error(err)
 			res := model.HttpRes{Code: model.ERR_INSERT_JOB, Msg: err.Error()}
 			writer.Write([]byte(res.String()))
 			return
 		}
-		err = scheduler.AddNewJob(engineJob)
+		err = scheduler.AddNewJob(engineJob.Interval, engineJob)
 		if err != nil {
-			log.Error(err)
+			logger.Error(err)
 			res := model.HttpRes{Code: model.ERR_ADD_SCHEDULER, Msg: err.Error()}
 			writer.Write([]byte(res.String()))
 			return
@@ -61,11 +60,12 @@ func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps http
 func Start() {
 	router := httprouter.New()
 	router.POST("/icity/data/engine/:action", httprouter.Handle(func(writer http.ResponseWriter, request *http.Request, ps httprouter.Params) {
-		log.Info("request-----start")
+		//log.Println("request-----start")
+		logger.Record("request-----start" + request.URL.String())
 		dataEngineHandle(writer, request, ps)
-		log.Info("request-----end")
+		logger.Record("request-----end" + request.URL.String())
 	}))
 
-	fmt.Println("start server======================")
+	logger.Record("start server======================")
 	http.ListenAndServe(":1215", router)
 }

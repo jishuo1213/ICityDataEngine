@@ -1,6 +1,6 @@
 package constant
 
-const DEBUG bool = true
+const DEBUG = true
 
 //const name  =
 
@@ -10,14 +10,14 @@ type HttpParamType = int
 type HttpParamFrom = int
 
 const (
-	BODY_XFORM_TYPE = 1
-	BODY_JSON_TYPE  = 2
-	BODY_FORM_TYPE  = 3
+	BodyXFormType = 1
+	BodyJsonType  = 2
+	BodyFormType  = 3
 )
 
 const (
-	GET  = 1
-	POST = 2
+	Get  = 1
+	Post = 2
 )
 const (
 	BODY   = 1
@@ -26,8 +26,10 @@ const (
 
 const (
 	DB    = 1
-	VALUE = 2
+	Value = 2
 )
 
-const CMSP_IP = "172.22.16.138"
-const CMSP_PORT = 1216
+const CMSPIP = "172.22.16.138"
+const CMSPPort = 1216
+
+const MongoIp = "172.22.16.144:27017"

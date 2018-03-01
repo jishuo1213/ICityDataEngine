@@ -2,16 +2,11 @@ package model
 
 import (
 	"strconv"
-	//"database/sql"
-	//"ICityDataEngine/repo"
+	"database/sql"
+	"IcityMessageBus/utils"
+	"log"
+	"ICityDataEngine/i"
 )
-
-type SqlParamConfig interface {
-	GetDBDataSource() string
-	GetSqlSentence() string
-	GetDBType() string
-	//QueryAndParseParams(parser func(rows ...*sql.Rows) error) error //查询并处理查询出来的参数
-}
 
 type MySqlConfig struct {
 	UserName    string
@@ -35,6 +30,27 @@ func (config *MySqlConfig) GetDBType() string {
 	return "mysql"
 }
 
-//func (config *MySqlConfig) QueryAndParseParams(parser func(rows ...*sql.Rows) error) error {
-//	return repo.QuerySqlParams(parser, config)
-//}
+func (config *MySqlConfig) QuerySqlParams(parser i.ISqlResultParser) error {
+	db, err := sql.Open(config.GetDBType(), config.GetDBDataSource())
+	defer func() {
+		if db != nil {
+			db.Close()
+		}
+	}()
+	if err != nil {
+		utils.CheckPanicError(err)
+	}
+
+	log.Println("query:" + config.GetSqlSentence())
+	rows, err := db.Query(config.GetSqlSentence())
+	defer func() {
+		if rows != nil {
+			rows.Close()
+		}
+	}()
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return parser.Parse(rows)
+}

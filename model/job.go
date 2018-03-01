@@ -4,6 +4,8 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"github.com/kataras/iris/core/errors"
 	"github.com/bitly/go-simplejson"
+	"ICityDataEngine/logger"
+	"ICityDataEngine/requester"
 )
 
 type HttpDataEngineJob struct {
@@ -12,15 +14,19 @@ type HttpDataEngineJob struct {
 	Interval    string        `bson:"interval"`
 	ParallelNum int           `bson:"parallel_num"`
 	//RequestConfig  map[string]interface{} `bson:"request_config"`
-	RequestConfig  HttpRequestConfig      `bson:"request_config"`
+	RequestConfig  httpRequestConfig      `bson:"request_config"`
 	ResponseConfig map[string]interface{} `bson:"response_config"`
 	LastRunTime    int64                  `bson:"last_run_time"`
 }
 
 func (job *HttpDataEngineJob) Run() {
+	err := requester.GenerateRequest(&job.RequestConfig)
+	if err != nil {
+		logger.Error(err)
+		logger.Record(job.Id + "生成请求失败,定时任务执行失败")
+		return
+	}
 
-	//requestType := string.(job.RequestConfig["type"])
-	//fmt.Println(requestType)
 }
 
 func initJobConfig(config string) (*simplejson.Json, error) {
@@ -55,7 +61,7 @@ func ParseConfig(config string, id string) (*HttpDataEngineJob, error) {
 	if err != nil {
 		return nil, errors.New("request_config中type不存在或类型错误")
 	}
-	var httpRequestConfig *HttpRequestConfig
+	var httpRequestConfig *httpRequestConfig
 	switch requestType {
 	case "http":
 		var err error

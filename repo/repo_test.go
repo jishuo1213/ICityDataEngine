@@ -2,14 +2,12 @@ package repo
 
 import (
 	"testing"
-	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"ICityDataEngine/model"
 	"flag"
 	"os"
-	"log"
-	"fmt"
-	"IcityMessageBus/utils"
+	"github.com/bitly/go-simplejson"
+	"ICityDataEngine/requester"
 )
 
 func TestMain(m *testing.M) {
@@ -22,88 +20,94 @@ func TestMain(m *testing.M) {
 	os.Exit(ret)
 }
 
-func Test_Query(t *testing.T) {
-	config := model.MySqlConfig{UserName: "root", PassWord: "123456a?",
-		DBAddress: "172.22.16.139", Port: 3306, DBName: "icity", SqlSentence: "SELECT * FROM cust_customer_check where mobilePhone = '15069085636'"}
-
-	t.Log(config.GetDBDataSource())
-	db, err := sql.Open("mysql", config.GetDBDataSource())
+func TestGenerateRequest(t *testing.T) {
+	requestConfigJson := `{
+        "type": "http",
+        "url": "http://www.icity24.cn/icity/as/app/getYearBill",
+        "method": 2,
+        "body_type": 3,
+        "variables_config": {
+            "variables": [
+                {
+                    "name": "mobile",
+                    "data_to": 1,
+                    "data_from": 1,
+                    "mapping_name": "mobilePhone"
+                },
+                {
+                    "name": "idCard",
+                    "data_to": 1,
+                    "data_from": 1,
+                    "mapping_name": "idCard"
+                },
+                {
+                    "name": "city_code",
+                    "data_to": 1,
+                    "data_from": 1,
+                    "mapping_name": "custId",
+					"data_type":"int"
+                }
+            ],
+            "db_config": {
+                "db_type": "mysql",
+                "user_name": "root",
+                "password": "123456a?",
+                "db_ip": "172.22.16.139",
+                "port": 3306,
+                "db_name": "icity",
+                "sql": "select custId,mobilePhone,idCard from cust_customer_check"
+            }
+        }
+    }`
+	json, err := simplejson.NewJson([]byte(requestConfigJson))
 	if err != nil {
-		utils.CheckPanicError(err)
+		t.Fatal(err)
 	}
-	defer db.Close()
-	//rows := db.QueryRow(config.SqlSentence)
-	rows, err := db.Query(config.SqlSentence)
+	requestConfig, err := model.NewHttpRequestConfig(json, "fadadfasdf")
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
-
-	count := 0
-	log.Println("===========")
-	//var phone string
-	//result := make([]interface{}, 0, 2)
-	//value := "aa"
-	//var value SqlString
-	//value = "aaa"
-	//value := SqlString{}
-	//result = append(result, reflect.ValueOf(value).FieldByName(strings.Title("a")).Addr().Interface())
-	//reflect.ValueOf().FieldByName().Addr().Interface()
-	cols, _ := rows.Columns()
-	log.Println(cols)
-	rc := newMapStringScan(cols)
-
-	for rows.Next() {
-		//fmt.Println(rows.Columns())
-		////rows.Scan()
-		//columnsType, _ := rows.ColumnTypes()
-		//for _, cType := range columnsType {
-		//	fmt.Println(cType.Name())
-		//	value := reflect.Zero(cType.ScanType())
-		//	result = append(result, value)
-		//}
-
-		//rows.Scan(result...)
-		//fmt.Println(result[0] == nil)
-		//
-		////sql.RawBytes{}
-		//count++
-
-		err := rc.Update(rows)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		cv := rc.Get()
-		log.Printf("%#v\n\n", cv)
-
-		/*		columns := make([]interface{}, len(cols))
-				columnPointers := make([]interface{}, len(cols))
-				for i := range columns {
-					columnPointers[i] = &columns[i]
-				}
-
-				// Scan the result into the column pointers...
-				if err := rows.Scan(columnPointers...); err != nil {
-					fmt.Println(err)
-					return
-				}
-
-				// Create our map, and retrieve the value for each column from the pointers slice,
-				// storing it in the map with the name of the column as the key.
-				m := make(map[string]interface{})
-				for i, colName := range cols {
-					val := columnPointers[i].(*interface{})
-					fmt.Println(reflect.TypeOf(*val))
-					m[colName] = *val
-				}
-
-				// Outputs: map[columnName:value columnName2:value2 columnName3:value3 ...]
-				fmt.Println(m["mobilePhone"].(string))*/
+	t.Log("NewHttpRequestConfig success")
+	err = requester.GenerateRequest(requestConfig)
+	if err != nil {
+		t.Fatal(err)
 	}
-	//t.Error(count)
-	log.Println(count)
 }
+
+//func _Test_Query(t *testing.T) {
+//	config := model.MySqlConfig{UserName: "root", PassWord: "123456a?",
+//		DBAddress: "172.22.16.139", Port: 3306, DBName: "icity", SqlSentence: "SELECT * FROM cust_customer_check where mobilePhone = '15069085636'"}
+//	t.Log(config.GetDBDataSource())
+//	db, err := sql.Open("mysql", config.GetDBDataSource())
+//	if err != nil {
+//		utils.CheckPanicError(err)
+//	}
+//	defer db.Close()
+//	//rows := db.QueryRow(config.SqlSentence)
+//	rows, err := db.Query(config.SqlSentence)
+//	if err != nil {
+//		t.Error(err)
+//	}
+//
+//	count := 0
+//	log.Println("===========")
+//	cols, _ := rows.Columns()
+//	log.Println(cols)
+//	rc := newMapStringScan(cols)
+//
+//	for rows.Next() {
+//		err := rc.Update(rows)
+//		if err != nil {
+//			fmt.Println(err)
+//			return
+//		}
+//
+//		cv := rc.Get()
+//		log.Printf("%#v\n\n", cv)
+//
+//	}
+//	log.Println(count)
+//}
 
 //type mapStringScan struct {
 //	// cp are the column pointers
