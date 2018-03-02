@@ -25,6 +25,7 @@ type httpRequestConfig struct {
 	Headers     []*httpVariables     `bson:"headers"`
 	Params      []*httpVariables     `bson:"params"`
 	SqlConfig   i.ISqlParamConfig    `bson:"sql_config"`
+	SqlRepo     i.ISqlParamRepo      `bson:"-"`
 	Id          string               `bson:"-"`
 }
 
@@ -285,6 +286,8 @@ func NewHttpRequestConfig(requestConfig *simplejson.Json, id string) (*httpReque
 					return nil, errors.New("sql不存在或格式错误,应该为string")
 				}
 				config.SqlConfig = &MySqlConfig{userName, password, dbIP, int(dbPort), dbName, sqlSentence}
+				//config.SqlRepo = &repo.QueryMySqlParamsRepo{}
+
 				break
 			default:
 				return nil, errors.New("不支持的数据库类型")

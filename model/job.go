@@ -5,7 +5,7 @@ import (
 	"github.com/kataras/iris/core/errors"
 	"github.com/bitly/go-simplejson"
 	"ICityDataEngine/logger"
-	"ICityDataEngine/requester"
+	"ICityDataEngine/repo"
 )
 
 type HttpDataEngineJob struct {
@@ -20,7 +20,7 @@ type HttpDataEngineJob struct {
 }
 
 func (job *HttpDataEngineJob) Run() {
-	err := requester.GenerateRequest(&job.RequestConfig)
+	err := repo.GenerateRequest(&job.RequestConfig)
 	if err != nil {
 		logger.Error(err)
 		logger.Record(job.Id + "生成请求失败,定时任务执行失败")

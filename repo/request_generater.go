@@ -1,4 +1,4 @@
-package requester
+package repo
 
 import (
 	"IcityMessageBus/cmsp"
@@ -207,7 +207,8 @@ func GenerateRequest(wrapConfig i.IRequestConfig) error {
 		return err
 	}
 
-	err = wrapConfig.GetSqlConfig().QuerySqlParams(parser)
+	err = wrapConfig.GetSqlConfig().QuerySqlParams(&QueryMySqlParamsRepo{}, parser)
+
 	if err != nil {
 		return err
 	}

@@ -5,11 +5,15 @@ import (
 	"database/sql"
 )
 
+type ISqlParamRepo interface {
+	QuerySqlParams(ISqlParamConfig, ISqlResultParser) error
+}
+
 type ISqlParamConfig interface {
 	GetDBDataSource() string
 	GetSqlSentence() string
 	GetDBType() string
-	QuerySqlParams(parser ISqlResultParser) error
+	QuerySqlParams(repo ISqlParamRepo, parser ISqlResultParser) error
 }
 
 type IRequestConfig interface {
@@ -24,6 +28,5 @@ type IRequestConfig interface {
 }
 
 type ISqlResultParser interface {
-
 	Parse(*sql.Rows) error
 }
