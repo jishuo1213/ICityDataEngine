@@ -13,7 +13,7 @@ type ISqlParamConfig interface {
 	GetDBDataSource() string
 	GetSqlSentence() string
 	GetDBType() string
-	QuerySqlParams(repo ISqlParamRepo, parser ISqlResultParser) error
+	QuerySqlParams(parser ISqlResultParser) error
 }
 
 type IRequestConfig interface {

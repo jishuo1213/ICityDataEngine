@@ -22,7 +22,7 @@ func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps http
 			return
 		}
 		jobId := bson.NewObjectId()
-		engineJob, err := model.ParseConfig(string(jobConfig), jobId.String())
+		engineJob, err := model.ParseConfig(jobConfig, jobId.String())
 		if err != nil {
 			logger.Error(err)
 			res := model.HttpRes{Code: model.ERR_PARSE_CONFIG, Msg: err.Error()}
@@ -53,6 +53,23 @@ func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps http
 		writer.Write([]byte(res.String()))
 		break
 	case "delete":
+		break
+	case "test":
+		id := request.URL.Query().Get("id")
+		if len(id) == 0 {
+			res := model.HttpRes{Code: model.ERR_SERVER, Msg: "test id is empty"}
+			writer.Write([]byte(res.String()))
+			return
+		}
+		job, err := repo.QueryJobById(id)
+		if err != nil {
+			res := model.HttpRes{Code: model.ERR_SERVER, Msg: "query failed:" + err.Error()}
+			writer.Write([]byte(res.String()))
+			return
+		}
+
+		job.Run()
+
 		break
 	}
 }

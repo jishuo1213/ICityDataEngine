@@ -68,7 +68,7 @@ func TestGenerateRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Log("NewHttpRequestConfig success")
-	err = requester.GenerateRequest(requestConfig)
+	err = requester.GenerateRequest(requestConfig, requestConfig.Id)
 	if err != nil {
 		t.Fatal(err)
 	}

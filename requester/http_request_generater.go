@@ -1,4 +1,4 @@
-package repo
+package requester
 
 import (
 	"IcityMessageBus/cmsp"
@@ -32,8 +32,8 @@ func newMapStringScan(columnNames []string) *mapStringScan {
 		colCount: lenCN,
 		colNames: columnNames,
 	}
-	for i := 0; i < lenCN; i++ {
-		s.cp[i] = new(sql.RawBytes)
+	for index := 0; index < lenCN; index++ {
+		s.cp[index] = new(sql.RawBytes)
 	}
 	return s
 }
@@ -60,6 +60,7 @@ func (s *mapStringScan) Get() map[string]string {
 
 type sqlResultParser struct {
 	requestConfig i.IRequestConfig
+	queueId       string
 }
 
 func (parser *sqlResultParser) Parse(rows *sql.Rows) error {
@@ -175,7 +176,7 @@ func (parser *sqlResultParser) Parse(rows *sql.Rows) error {
 		if err != nil {
 			return errors.New("序列化请求失败")
 		}
-		err = cmsp.PutMsgIntoQueueNet(constant.CMSPIP, constant.CMSPPort, requestConfig.GetId(), requestBytes)
+		err = cmsp.PutMsgIntoQueueNet(constant.CMSPIP, constant.CMSPPort, parser.queueId, requestBytes)
 		if err != nil {
 			return errors.New("请求入队失败" + err.Error())
 		}
@@ -192,22 +193,22 @@ func (parser *sqlResultParser) Parse(rows *sql.Rows) error {
 	return nil
 }
 
-func GenerateRequest(wrapConfig i.IRequestConfig) error {
+func GenerateRequest(wrapConfig i.IRequestConfig, queueId string) error {
 
-	err := cmsp.DeleteQueueNet(constant.CMSPIP, constant.CMSPPort, wrapConfig.GetId())
-	defer cmsp.DisconnectCmsp(constant.CMSPIP, constant.CMSPPort, wrapConfig.GetId())
+	err := cmsp.DeleteQueueNet(constant.CMSPIP, constant.CMSPPort, queueId)
+	defer cmsp.DisconnectCmsp(constant.CMSPIP, constant.CMSPPort, queueId)
 	if err != nil {
 		return errors.New("连接cmsp失败:" + err.Error())
 	}
 
-	parser := &sqlResultParser{requestConfig: wrapConfig}
+	parser := &sqlResultParser{requestConfig: wrapConfig, queueId: queueId}
 
 	if wrapConfig.GetSqlConfig() == nil {
 		err = parser.Parse(nil)
 		return err
 	}
 
-	err = wrapConfig.GetSqlConfig().QuerySqlParams(&QueryMySqlParamsRepo{}, parser)
+	err = wrapConfig.GetSqlConfig().QuerySqlParams(parser)
 
 	if err != nil {
 		return err
@@ -217,6 +218,7 @@ func GenerateRequest(wrapConfig i.IRequestConfig) error {
 
 func addDBArguments(mapScan *mapStringScan, DbMapping map[string]string, request map[string]string) (map[string]string) {
 	result := mapScan.Get()
+
 	if DbMapping != nil {
 		if request == nil {
 			request = make(map[string]string)

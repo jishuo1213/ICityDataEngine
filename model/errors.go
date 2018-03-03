@@ -1,8 +1,8 @@
 package model
 
-type NoNeedQueryError struct {
+type ConnectCmspError struct {
 }
 
-func (NoNeedQueryError) Error() string {
-	return "No Need Query"
+func (ConnectCmspError) Error() string {
+	return "Connect cmsp Error"
 }
