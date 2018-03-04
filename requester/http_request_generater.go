@@ -193,13 +193,14 @@ func (parser *sqlResultParser) Parse(rows *sql.Rows) error {
 	return nil
 }
 
-func GenerateRequest(wrapConfig i.IRequestConfig, queueId string) error {
-
+func GenerateRequest(wrapConfig i.IRequestConfig, queueId string, statusParser i.IDealRunStatus) error {
 	err := cmsp.DeleteQueueNet(constant.CMSPIP, constant.CMSPPort, queueId)
 	defer cmsp.DisconnectCmsp(constant.CMSPIP, constant.CMSPPort, queueId)
 	if err != nil {
 		return errors.New("连接cmsp失败:" + err.Error())
 	}
+
+	statusParser("连接cmsp成功")
 
 	parser := &sqlResultParser{requestConfig: wrapConfig, queueId: queueId}
 
@@ -208,7 +209,7 @@ func GenerateRequest(wrapConfig i.IRequestConfig, queueId string) error {
 		return err
 	}
 
-	err = wrapConfig.GetSqlConfig().QuerySqlParams(parser)
+	err = wrapConfig.GetSqlConfig().QuerySqlParams(parser.Parse)
 
 	if err != nil {
 		return err

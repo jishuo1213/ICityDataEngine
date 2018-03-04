@@ -17,7 +17,7 @@ func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps http
 		jobConfig, err := ioutil.ReadAll(request.Body)
 		if err != nil {
 			logger.Error(err)
-			res := model.HttpRes{Code: model.ERR_SERVER, Msg: err.Error()}
+			res := model.WSRes{Res: model.HttpRes{Code: model.ERR_SERVER, Msg: err.Error()}, CmdId: ""}
 			writer.Write([]byte(res.String()))
 			return
 		}
@@ -53,23 +53,6 @@ func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps http
 		writer.Write([]byte(res.String()))
 		break
 	case "delete":
-		break
-	case "test":
-		id := request.URL.Query().Get("id")
-		if len(id) == 0 {
-			res := model.HttpRes{Code: model.ERR_SERVER, Msg: "test id is empty"}
-			writer.Write([]byte(res.String()))
-			return
-		}
-		job, err := repo.QueryJobById(id)
-		if err != nil {
-			res := model.HttpRes{Code: model.ERR_SERVER, Msg: "query failed:" + err.Error()}
-			writer.Write([]byte(res.String()))
-			return
-		}
-
-		job.Run()
-
 		break
 	}
 }

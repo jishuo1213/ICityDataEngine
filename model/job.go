@@ -49,14 +49,24 @@ func (job *HttpDataEngineJob) Run() {
 	}
 }
 
-func (job *HttpDataEngineJob) TestRun() {
-	err := requester.GenerateRequest(&job.RequestConfig, job.Id.String()+"_test")
+func (job *HttpDataEngineJob) TestRun(statusChan chan<- string) {
+	queueId := job.Id.String() + "_test"
+
+	statusChan <- "开始测试:" + job.Name
+	statusChan <- "开始生成请求"
+	err := requester.GenerateRequest(&job.RequestConfig, queueId)
+
 	if err != nil {
-		logger.Error(err)
-		logger.Record(job.Id + "生成请求失败,定时任务执行失败")
+		//logger.Error(err)
+		//logger.Record(job.Id + "生成请求失败,定时任务执行失败")
+		statusChan <- "生成请求失败,错误:" + err.Error()
 		return
 	}
-
+	requestChan := make(chan *model.RequestInfo, 20)
+	go readMessageLopper(queueId, requestChan)
+	for index := 0; index < job.ParallelNum; index++ {
+		go dealRequest(requestChan)
+	}
 }
 
 func dealRequest(requestChan <-chan *model.RequestInfo) {

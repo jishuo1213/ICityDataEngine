@@ -9,6 +9,10 @@ type ISqlParamRepo interface {
 	QuerySqlParams(ISqlParamConfig, ISqlResultParser) error
 }
 
+type ISqlResultParser func(*sql.Rows) error
+
+type IDealRunStatus func(string)
+
 type ISqlParamConfig interface {
 	GetDBDataSource() string
 	GetSqlSentence() string
@@ -27,6 +31,6 @@ type IRequestConfig interface {
 	GenerateJsonBody(map[string]string) (map[string]interface{}, error)
 }
 
-type ISqlResultParser interface {
-	Parse(*sql.Rows) error
-}
+//type ISqlResultParser interface {
+//	Parse(*sql.Rows) error
+//}
