@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"strconv"
 	"ICityDataEngine/i"
+	"log"
 )
 
 type mapStringScan struct {
@@ -63,7 +64,9 @@ type sqlResultParser struct {
 	queueId       string
 }
 
-func (parser *sqlResultParser) Parse(rows *sql.Rows) error {
+func (parser *sqlResultParser) Parse(rows *sql.Rows, statusParser i.IDealRunStatus) error {
+
+	statusParser("开始解析数据库查询结果----")
 
 	requestConfig := parser.requestConfig
 
@@ -176,9 +179,11 @@ func (parser *sqlResultParser) Parse(rows *sql.Rows) error {
 		if err != nil {
 			return errors.New("序列化请求失败")
 		}
+		statusParser("生成请求并加入队列" + strconv.Itoa(count) + ":" + requestInfo.GetFormatString())
 		err = cmsp.PutMsgIntoQueueNet(constant.CMSPIP, constant.CMSPPort, parser.queueId, requestBytes)
 		if err != nil {
-			return errors.New("请求入队失败" + err.Error())
+			log.Println(err)
+			return errors.New("请求入队失败" + err.Error() + "-------" + requestInfo.GetFormatString())
 		}
 
 		if rows == nil {
@@ -195,7 +200,6 @@ func (parser *sqlResultParser) Parse(rows *sql.Rows) error {
 
 func GenerateRequest(wrapConfig i.IRequestConfig, queueId string, statusParser i.IDealRunStatus) error {
 	err := cmsp.DeleteQueueNet(constant.CMSPIP, constant.CMSPPort, queueId)
-	defer cmsp.DisconnectCmsp(constant.CMSPIP, constant.CMSPPort, queueId)
 	if err != nil {
 		return errors.New("连接cmsp失败:" + err.Error())
 	}
@@ -205,15 +209,16 @@ func GenerateRequest(wrapConfig i.IRequestConfig, queueId string, statusParser i
 	parser := &sqlResultParser{requestConfig: wrapConfig, queueId: queueId}
 
 	if wrapConfig.GetSqlConfig() == nil {
-		err = parser.Parse(nil)
+		err = parser.Parse(nil, statusParser)
 		return err
 	}
 
-	err = wrapConfig.GetSqlConfig().QuerySqlParams(parser.Parse)
+	err = wrapConfig.GetSqlConfig().QuerySqlParams(parser.Parse, statusParser)
 
 	if err != nil {
 		return err
 	}
+	log.Println("generate success")
 	return nil
 }
 

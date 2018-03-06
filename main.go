@@ -5,5 +5,6 @@ import (
 )
 
 func main() {
-	server.Start()
+	go server.Start()
+	server.StartWebSocketServer()
 }

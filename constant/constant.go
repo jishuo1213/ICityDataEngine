@@ -1,6 +1,6 @@
 package constant
 
-const DEBUG = true
+const DEBUG = false
 
 //const name  =
 

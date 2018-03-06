@@ -1,7 +1,6 @@
 package model
 
 import (
-	"gopkg.in/mgo.v2/bson"
 	"github.com/kataras/iris/core/errors"
 	"github.com/bitly/go-simplejson"
 	"ICityDataEngine/logger"
@@ -13,6 +12,10 @@ import (
 	"net/http"
 	"time"
 	"io/ioutil"
+	"ICityDataEngine/i"
+	"strconv"
+	"log"
+	"sync"
 )
 
 var httpClient *http.Client
@@ -25,104 +28,139 @@ func init() {
 
 type HttpDataEngineJob struct {
 	//jobConfig *config.JobConfig
-	Id             bson.ObjectId          `bson:"_id"`
-	Name           string                 `bson:"friendly_name"`
-	Interval       string                 `bson:"interval"`
-	ParallelNum    int                    `bson:"parallel_num"`
-	RequestConfig  httpRequestConfig      `bson:"request_config"`
-	ResponseConfig map[string]interface{} `bson:"response_config"`
-	LastRunTime    int64                  `bson:"last_run_time"`
+	Id             string            `bson:"_id"`
+	Name           string            `bson:"friendly_name"`
+	Interval       string            `bson:"interval"`
+	ParallelNum    int               `bson:"parallel_num"`
+	RequestConfig  i.IRequestConfig  `bson:"request_config"`
+	ResponseConfig i.IResponseConfig `bson:"response_config"`
+	LastRunTime    int64             `bson:"last_run_time"`
 }
 
 func (job *HttpDataEngineJob) Run() {
-	err := requester.GenerateRequest(&job.RequestConfig, job.Id.String())
+	log.Println("start run id = " + job.Id)
+	statusParser := func(s interface{}) {
+		switch s.(type) {
+		case string:
+			logger.Record(s)
+			break
+		case error:
+			logger.Error(s)
+			break
+		default:
+			break
+		}
+	}
+	topicName, _ := utils.DigestMessage([]byte(job.Id))
+	topicName = topicName[8:24]
+	err := requester.GenerateRequest(job.RequestConfig, topicName, statusParser)
+	defer cmsp.DisconnectCmsp(constant.CMSPIP, constant.CMSPPort, topicName)
 	if err != nil {
-		logger.Error(err)
-		logger.Record(job.Id + "生成请求失败,定时任务执行失败")
+
+		statusParser(err)
+		//logger.Error(err)
+		statusParser(job.Name + "生成请求失败,定时任务执行失败")
+		//logger.Record()
 		return
 	}
 
 	requestChan := make(chan *model.RequestInfo, 20)
-	go readMessageLopper(job.Id.String(), requestChan)
+	go readMessageLopper(topicName, requestChan, statusParser)
+	wg := &sync.WaitGroup{}
 	for index := 0; index < job.ParallelNum; index++ {
-		go dealRequest(requestChan)
+		wg.Add(1)
+		go dealRequest(requestChan, statusParser, wg, job.ResponseConfig)
 	}
+	wg.Wait()
+
+	log.Println("run======================end")
 }
 
 func (job *HttpDataEngineJob) TestRun(statusChan chan<- string) {
-	queueId := job.Id.String() + "_test"
+	queueId, _ := utils.DigestMessage([]byte(job.Id + "_test"))
+	queueId = queueId[8:24]
+	log.Println("TestRun:" + queueId)
 
+	statusParser := func(s interface{}) {
+		switch s.(type) {
+		case string:
+			statusChan <- s.(string)
+			break
+		case error:
+			statusChan <- s.(error).Error()
+			break
+		default:
+			break
+		}
+	}
 	statusChan <- "开始测试:" + job.Name
-	statusChan <- "开始生成请求"
-	err := requester.GenerateRequest(&job.RequestConfig, queueId)
-
+	statusChan <- "开始生成请求------"
+	err := requester.GenerateRequest(job.RequestConfig, queueId, statusParser)
+	defer cmsp.DisconnectCmsp(constant.CMSPIP, constant.CMSPPort, queueId)
 	if err != nil {
 		//logger.Error(err)
 		//logger.Record(job.Id + "生成请求失败,定时任务执行失败")
 		statusChan <- "生成请求失败,错误:" + err.Error()
 		return
 	}
+	statusChan <- "生成http请求成功,开始发送"
 	requestChan := make(chan *model.RequestInfo, 20)
-	go readMessageLopper(queueId, requestChan)
+	go readMessageLopper(queueId, requestChan, statusParser)
+	wg := &sync.WaitGroup{}
 	for index := 0; index < job.ParallelNum; index++ {
-		go dealRequest(requestChan)
+		wg.Add(1)
+		go dealRequest(requestChan, statusParser, wg, job.ResponseConfig)
 	}
+	wg.Wait()
+	log.Println("testRun end")
 }
 
-func dealRequest(requestChan <-chan *model.RequestInfo) {
+func dealRequest(requestChan <-chan *model.RequestInfo, statusParser i.IDealRunStatus, wg *sync.WaitGroup, config i.IResponseConfig) {
+	defer func() {
+		log.Println("dealRequest end")
+		wg.Done()
+	}()
+	statusParser("开始发送http请求------")
 	for requestInfo := range requestChan {
 		httpRequest, err := requestInfo.GenerateRequest()
 		if err != nil {
-			logger.Error("Generate request failed err :" + err.Error() + " url:" +
-				requestInfo.Url + "body:" + requestInfo.Body)
+			statusParser(errors.New("Generate request failed err :" + err.Error() + " url:" +
+				requestInfo.Url + "body:" + requestInfo.Body))
 			continue
 		}
 
 		resp, err := httpClient.Do(httpRequest)
 		if err != nil {
-			logger.Error("send http request failed: request info:" +
-				requestInfo.GetFormatString() + "error:" + err.Error())
+			statusParser(errors.New("send http request failed: request info:" +
+				requestInfo.GetFormatString() + "error:" + err.Error()))
 			continue
 		}
 
-		logger.Record(requestInfo.GetFormatString() + " res:")
-		logger.Record(resp.StatusCode)
+		statusParser("执行:" + requestInfo.GetFormatString() + " 返回结果:")
 		body, err := ioutil.ReadAll(resp.Body)
-		logger.Record(string(body))
+		statusParser("状态码：" + strconv.Itoa(resp.StatusCode) + "返回结果：" + string(body))
+		if ok := config.IsSuccessResponse(body); ok {
+			config.DealSuccessResponse(body)
+		} else if ok = config.IsIgnoreResponse(body); ok {
+			return
+		} else {
+			config.DealFailedRequest(requestInfo)
+		}
 	}
 }
 
-//func sendHttpRequest(request *http.Request) (int, *http.Header, []byte, error) {
-//	//client := &http.Client{}
-//	resp, err := httpClient.Do(request)
-//	defer func() {
-//		if resp != nil {
-//			resp.Body.Close()
-//		}
-//	}()
-//	if err != nil {
-//		log.Print(err)
-//		return 500, nil, nil, err
-//	} else {
-//		body, err := ioutil.ReadAll(resp.Body)
-//		log.Print(string(body))
-//		if err != nil {
-//			log.Print(err)
-//			return resp.StatusCode, nil, nil, err
-//		}
-//		return resp.StatusCode, &resp.Header, body, nil
-//	}
-//}
-
-func readMessageLopper(queueId string, requestChan chan<- *model.RequestInfo) {
+func readMessageLopper(queueId string, requestChan chan<- *model.RequestInfo, statusParser i.IDealRunStatus) {
+	statusParser("开始读取请求队列----")
 	for {
 		msg, err := cmsp.ReadMsgFromQueueNet(constant.CMSPIP, constant.CMSPPort, queueId)
 		if err != nil {
-			if _, ok := err.(ConnectCmspError); ok {
-				logger.Error("connect cmsp failed ")
+			if _, ok := err.(cmsp.ConnectCmspError); ok {
+				//logger.Error("connect cmsp failed ")
+				statusParser(errors.New("connect cmsp failed "))
 				close(requestChan)
 				break
 			} else {
+				log.Println("read message end")
 				close(requestChan)
 				break
 			}
@@ -131,26 +169,16 @@ func readMessageLopper(queueId string, requestChan chan<- *model.RequestInfo) {
 		var request model.RequestInfo
 		err = utils.DecodeObject(&request, msg)
 		if err != nil {
-			logger.Error("read msg from queue but can not decode msg = " + string(msg))
-			break
+			//logger.Error("read msg from queue but can not decode msg = " + string(msg))
+			statusParser(errors.New("read msg from queue but can not decode msg = " +
+				string(msg) + " err:" + err.Error()))
+			continue
 		}
 		requestChan <- &request
 	}
 }
 
-func initJobConfig(config []byte) (*simplejson.Json, error) {
-	js, err := simplejson.NewJson(config)
-	if err != nil {
-		return nil, err
-	}
-	return js, nil
-}
-
-func ParseConfig(config []byte, id string) (*HttpDataEngineJob, error) {
-	jobConfig, err := initJobConfig(config)
-	if err != nil {
-		return nil, errors.New("json格式解析失败")
-	}
+func ParseConfig(jobConfig *simplejson.Json, id string) (*HttpDataEngineJob, error) {
 	interval, err := jobConfig.Get("interval").String()
 	if err != nil {
 		return nil, errors.New("interval不存在或类型错误")
@@ -160,9 +188,12 @@ func ParseConfig(config []byte, id string) (*HttpDataEngineJob, error) {
 		return nil, errors.New("parallel_num不存在或类型错误")
 	}
 	requestConfig := jobConfig.Get("request")
-	responseConfig, err := jobConfig.Get("response_config").Map()
+	responseJson := jobConfig.Get("response")
+
+	var responseConfig i.IResponseConfig
 	if err != nil {
-		return nil, errors.New("response_config不存在或类型错误")
+		//return nil, errors.New("response不存在或类型错误")
+		responseConfig = nil
 	}
 
 	requestType, err := requestConfig.Get("type").String()
@@ -178,11 +209,17 @@ func ParseConfig(config []byte, id string) (*HttpDataEngineJob, error) {
 		if err != nil {
 			return nil, err
 		}
+		if responseJson != nil {
+			responseConfig, err = NewHttpResponseConfig(responseJson, id)
+			if err != nil {
+				return nil, err
+			}
+		}
 		break
 	default:
 		return nil, errors.New("暂不支持" + requestType + "类型服务")
 	}
 
 	return &HttpDataEngineJob{Interval: interval,
-		ParallelNum: parallelNum, RequestConfig: *httpRequestConfig, ResponseConfig: responseConfig}, nil
+		ParallelNum: parallelNum, RequestConfig: httpRequestConfig, ResponseConfig: responseConfig}, nil
 }

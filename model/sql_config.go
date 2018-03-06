@@ -10,12 +10,12 @@ import (
 )
 
 type MySqlConfig struct {
-	UserName    string
-	PassWord    string
-	DBAddress   string
-	Port        int
-	DBName      string
-	SqlSentence string
+	UserName    string `bson:"user_name"`
+	PassWord    string `bson:"password"`
+	DBAddress   string `bson:"db_ip"`
+	Port        int    `bson:"port"`
+	DBName      string `bson:"db_name"`
+	SqlSentence string `bson:"sql"`
 	//QueryParamRepo i.IMySqlParamRepo
 }
 
@@ -32,8 +32,9 @@ func (config *MySqlConfig) GetDBType() string {
 	return "mysql"
 }
 
-func (config *MySqlConfig) QuerySqlParams(parser i.ISqlResultParser) error {
+func (config *MySqlConfig) QuerySqlParams(parser i.ISqlResultParser, statusParser i.IDealRunStatus) error {
 	//return repo.QuerySqlParams(config, parser)
+	statusParser("开始连接数据库----")
 	db, err := sql.Open(config.GetDBType(), config.GetDBDataSource())
 	defer func() {
 		if db != nil {
@@ -44,7 +45,8 @@ func (config *MySqlConfig) QuerySqlParams(parser i.ISqlResultParser) error {
 		utils.CheckPanicError(err)
 	}
 
-	log.Println("query:" + config.GetSqlSentence())
+	statusParser("执行sql语句----" + config.GetSqlSentence())
+
 	rows, err := db.Query(config.GetSqlSentence())
 	defer func() {
 		if rows != nil {
@@ -55,5 +57,5 @@ func (config *MySqlConfig) QuerySqlParams(parser i.ISqlResultParser) error {
 		log.Println(err)
 		return err
 	}
-	return parser.Parse(rows)
+	return parser(rows, statusParser)
 }

@@ -25,9 +25,8 @@ func init() {
 		return
 	}
 
-	//infoLogger = log.New(os.Stdout, "info", log.LstdFlags|log.Llongfile)
-	errorLogger = log.New(errLogFileWriter, "info", log.LstdFlags|log.Llongfile)
-	fileLogger = log.New(normalLogFileWriter, "info", log.LstdFlags|log.Llongfile)
+	errorLogger = log.New(errLogFileWriter, "", log.LstdFlags|log.Lshortfile)
+	fileLogger = log.New(normalLogFileWriter, "", log.LstdFlags|log.Lshortfile)
 }
 
 func Error(v ...interface{}) {

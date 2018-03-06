@@ -24,6 +24,7 @@ func (repo *QueryMySqlParamsRepo) QuerySqlParams(config i.ISqlParamConfig, parse
 
 	log.Println("query:" + config.GetSqlSentence())
 	rows, err := db.Query(config.GetSqlSentence())
+
 	defer func() {
 		if rows != nil {
 			rows.Close()
@@ -33,5 +34,5 @@ func (repo *QueryMySqlParamsRepo) QuerySqlParams(config i.ISqlParamConfig, parse
 		log.Println(err)
 		return err
 	}
-	return parser.Parse(rows)
+	return parser(rows, nil)
 }

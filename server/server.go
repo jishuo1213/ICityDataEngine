@@ -9,6 +9,7 @@ import (
 	"ICityDataEngine/repo"
 	"gopkg.in/mgo.v2/bson"
 	"ICityDataEngine/logger"
+	"github.com/bitly/go-simplejson"
 )
 
 func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps httprouter.Params) {
@@ -17,20 +18,31 @@ func dataEngineHandle(writer http.ResponseWriter, request *http.Request, ps http
 		jobConfig, err := ioutil.ReadAll(request.Body)
 		if err != nil {
 			logger.Error(err)
-			res := model.WSRes{Res: model.HttpRes{Code: model.ERR_SERVER, Msg: err.Error()}, CmdId: ""}
+			res := model.HttpRes{Code: model.ERR_SERVER, Msg: err.Error()}
 			writer.Write([]byte(res.String()))
 			return
 		}
+
+		jsonJob, err := simplejson.NewJson(jobConfig)
+		if err != nil {
+			logger.Error(err)
+			res := model.HttpRes{Code: model.ERR_PARSE_CONFIG, Msg: "json格式解析失败:" + err.Error()}
+			writer.Write([]byte(res.String()))
+			return
+		}
+
 		jobId := bson.NewObjectId()
-		engineJob, err := model.ParseConfig(jobConfig, jobId.String())
+
+		engineJob, err := model.ParseConfig(jsonJob, jobId.Hex())
 		if err != nil {
 			logger.Error(err)
 			res := model.HttpRes{Code: model.ERR_PARSE_CONFIG, Msg: err.Error()}
 			writer.Write([]byte(res.String()))
 			return
 		}
-		engineJob.Id = jobId
-		err = repo.AddJob(engineJob)
+		engineJob.Id = jobId.Hex()
+		jsonJob.Set("_id", jobId.Hex())
+		err = repo.AddJob(jsonJob)
 		if err != nil {
 			logger.Error(err)
 			res := model.HttpRes{Code: model.ERR_INSERT_JOB, Msg: err.Error()}

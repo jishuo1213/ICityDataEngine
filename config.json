@@ -1,33 +1,36 @@
 [
   {
-    "id": "",
-    "interval": "* 0 * * *",
+    "interval": "0 15 * * *",
     "parallel_num": 4,
     "request": {
       "type": "http",
-      "url": "http://www.icity24.cn/icity/as/app/getYearBill",
-      "method": 1,//1:get 2:post
-      "body_type": 1, //1:application/x-www-form-urlencoded 2:json 3:form-data 4
+      "url": "https://www.icity24.cn/beta/s/cust/getMineInfo",
+      "method": 1,
       "variables_config": {
         "variables": [
           {
-            "name": "mobile",
-            "type": 1,//1:body 2:header
-            "from": 1,
-            "mapping_name": "mobile_phone"
-          },
-          {
             "name": "access_token",
-            "type": 2,
-            "from": 1,//1 db 2 固定值
-            "mapping_name": "access_token"
+            "data_to": 2,
+            "data_from": 1,
+            "mapping_name": "accessToken"
           },
           {
-            "name": "city_code",
-            "type": 2,
-            "from": 2,
-            "value": "370100",
-            "json_type":"int"
+            "name": "version",
+            "data_to": 2,
+            "data_from": 2,
+            "value": "3.1.0"
+          },
+          {
+            "name": "cityCode",
+            "data_to": 2,
+            "data_from": 2,
+            "value": "370100"
+          },
+          {
+            "name": "build",
+            "data_to": 2,
+            "data_from": 2,
+            "value": "131"
           }
         ],
         "db_config": {
@@ -35,112 +38,278 @@
           "user_name": "root",
           "password": "123456a?",
           "db_ip": "172.22.16.139",
-          "port":3306,
+          "port": 3306,
           "db_name": "icity",
-          "sql": "select mobile_phone,access_token from table cust_customer"
+          "sql": "SELECT a.accessToken FROM cust_accesstoken a JOIN cust_customer_check b ON a.custId = b.custId"
         }
       }
     },
-    "response_config": {
-      "save_type": 2,
-      "save_key": [
-        "mobile"
-      ],
-      "redis_ip": "172.22.16.144",
-      "redis_port": 6379,
-      "db_name": ""
+    "response": {
+      "success_response_config": {
+        "response_code": 200,
+        "data_type": "jsonObject",
+        "template": {
+          "code": "0000"
+        },
+        "do_after": [
+          "save",
+          "http"
+        ],
+        "save_config": {
+          "save_to": "cmsp",
+          "topic_name": "adsfasfafdsfffdsaf"
+        },
+        "http_config": {
+          "type": "http",
+          "url": "https://www.icity24.cn/beta/s/cust/getMineInfo",
+          "method": 2,
+          "headers": [
+            {
+              "key1": "value1"
+            },
+            {
+              "key2": "value2"
+            }
+          ],
+          "body": ""
+        }
+      },
+      "ignore_response_config": {
+        "response_code": 600,
+        "data_type": "jsonObject",
+        "template": [
+          {
+            "error": {
+              "code": 702
+            }
+          },
+          {
+            "error": {
+              "code": 701
+            }
+          }
+        ]
+      },
+      "failed_response_config": {
+        "redo": true,
+        "max_retry_times": 3,
+        "retry_interval": 30
+      }
     }
   },
   {
-    "id": "",
+    "friendly_name": "test",
     "interval": "* 0 * * *",
     "parallel_num": 4,
     "request": {
       "type": "http",
-      "url": "http://www.icity24.cn/icity/as/app/getYearBill",
-      "method": "get",
-      "body_type": 1,
-      //1:application/x-www-form-urlencoded 2:json 3:form-data 4
-
-
+      "url": "https://www.icity24.cn/beta/s/cust/getMineInfo",
+      "method": 1,
       "variables_config": {
         "variables": [
           {
-            "name": "mobile",
-            "type": "body",
-            "from": "db",
-            "mapping_name": "mobile_phone"
+            "name": "access_token",
+            "data_to": 2,
+            "data_from": 1,
+            "mapping_name": "accessToken"
           },
           {
-            "name": "access_token",
-            "type": "header",
-            "from": "db",
-            "mapping_name": "access_token"
+            "name": "version",
+            "data_to": 2,
+            "data_from": 2,
+            "value": "3.1.0"
           },
           {
             "name": "city_code",
-            "type": "header",
-            "from": "value",
+            "data_to": 2,
+            "data_from": 2,
             "value": "370100"
+          },
+          {
+            "name": "build",
+            "data_to": 2,
+            "data_from": 2,
+            "value": "131"
           }
         ],
         "db_config": {
           "db_type": "mysql",
           "user_name": "root",
           "password": "123456a?",
-          "db_address": "172.22.16.139",
+          "db_ip": "172.22.16.139",
+          "port": 3306,
           "db_name": "icity",
-          "sql": "select mobile_phone,access_token from table cust_customer"
+          "sql": "SELECT a.accessToken FROM cust_accesstoken a JOIN cust_customer_check b ON a.custId = b.custId"
         }
       }
     },
-    "response_config": {
-      "save_type": 2,
-      "save_key": [
-        "mobile"
-      ],
-      "redis_ip": "172.22.16.144",
-      "redis_port": 6379,
-      "db_name": ""
+    "response": {
+      "success_response_config": {
+        "response_code": 200,
+        "data_type": "jsonObject",
+        "template": {
+          "code": "0000"
+        },
+        "do_after": [
+          "save",
+          "http"
+        ],
+        "save_config": {
+          "save_to": "redis",
+          "ip": "10.110.9.234",
+          "port": 6131,
+          "key": [
+            {
+              "name": "mine",
+              "type": 1
+            },
+            {
+              "name": "access_token",
+              "type": 2
+            }
+          ]
+        },
+        "http_config": {
+          "type": "http",
+          "url": "https://www.icity24.cn/beta/s/cust/getMineInfo",
+          "method": 2,
+          "headers": [
+            {
+              "key1": "value1"
+            },
+            {
+              "key2": "value2"
+            }
+          ],
+          "body": ""
+        }
+      },
+      "ignore_response_config": {
+        "response_code": 600,
+        "data_type": "jsonObject",
+        "template": [
+          {
+            "error": {
+              "code": 702
+            }
+          },
+          {
+            "error": {
+              "code": 701
+            }
+          }
+        ]
+      },
+      "failed_response_config": {
+        "redo": true,
+        "max_retry_times": 3,
+        "retry_interval": 30
+      }
     }
   },
   {
-    "id": "",
-    "interval": "1d",
+    "friendly_name": "test",
+    "interval": "* 0 * * *",
     "parallel_num": 4,
     "request": {
-      "url": "http://www.icity24.cn/icity/as/app/getYearBill",
-      "method": "post",
-      "body_type": "x-www-form-urlencoded",
-      "params": [
-        {
-          "name": "mobile"
-        }
-      ],
-      "params_config": [
-        {
-          "name": "mobile",
-          "data_source_type": 1,
+      "type": "http",
+      "url": "https://www.icity24.cn/beta/s/cust/getMineInfo",
+      "method": 1,
+      "variables_config": {
+        "variables": [
+          {
+            "name": "access_token",
+            "data_to": 2,
+            "data_from": 1,
+            "mapping_name": "accessToken"
+          },
+          {
+            "name": "version",
+            "data_to": 2,
+            "data_from": 2,
+            "value": "3.1.0"
+          },
+          {
+            "name": "city_code",
+            "data_to": 2,
+            "data_from": 2,
+            "value": "370100"
+          },
+          {
+            "name": "build",
+            "data_to": 2,
+            "data_from": 2,
+            "value": "131"
+          }
+        ],
+        "db_config": {
           "db_type": "mysql",
           "user_name": "root",
           "password": "123456a?",
-          "db_address": "172.22.16.139",
+          "db_ip": "172.22.16.139",
+          "port": 3306,
           "db_name": "icity",
-          "table_name": "cust_customer",
-          "columns": [
-            "mobilePhone"
-          ]
+          "sql": "SELECT a.accessToken FROM cust_accesstoken a JOIN cust_customer_check b ON a.custId = b.custId"
         }
-      ]
+      }
     },
-    "response_config": {
-      "save_type": 2,
-      "save_key": [
-        "mobile"
-      ],
-      "redis_ip": "172.22.16.144",
-      "redis_port": 6379,
-      "db_name": ""
+    "response": {
+      "success_response_config": {
+        "response_code": 200,
+        "data_type": "jsonObject",
+        "template": {
+          "code": "0000"
+        },
+        "do_after": [
+          "save",
+          "http"
+        ],
+        "save_config": {
+          "save_to": "db",
+          "db_type": "mysql",
+          "user_name": "root",
+          "password": "123456a?",
+          "db_ip": "172.22.16.139",
+          "port": 3306,
+          "db_name": "icity",
+          "sql": "SELECT a.accessToken FROM cust_accesstoken a JOIN cust_customer_check b ON a.custId = b.custId"
+        },
+        "http_config": {
+          "type": "http",
+          "url": "https://www.icity24.cn/beta/s/cust/getMineInfo",
+          "method": 2,
+          "headers": [
+            {
+              "key1": "value1"
+            },
+            {
+              "key2": "value2"
+            }
+          ],
+          "body": ""
+        }
+      },
+      "ignore_response_config": {
+        "response_code": 600,
+        "data_type": "jsonObject",
+        "template": [
+          {
+            "error": {
+              "code": 702
+            }
+          },
+          {
+            "error": {
+              "code": 701
+            }
+          }
+        ]
+      },
+      "failed_response_config": {
+        "redo": true,
+        "max_retry_times": 3,
+        "retry_interval": 30
+      }
     }
   }
 ]

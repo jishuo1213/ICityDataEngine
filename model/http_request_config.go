@@ -21,12 +21,12 @@ type httpVariables struct {
 type httpRequestConfig struct {
 	Url         string               `bson:"url"`
 	Method      constant.HttpMethod  `bson:"method"`
-	ContentType constant.ContentType `bson:"content_type"`
-	Headers     []*httpVariables     `bson:"headers"`
-	Params      []*httpVariables     `bson:"params"`
-	SqlConfig   i.ISqlParamConfig    `bson:"sql_config"`
-	SqlRepo     i.ISqlParamRepo      `bson:"-"`
+	ContentType constant.ContentType `bson:"content_type,omitempty"`
+	Headers     []*httpVariables     `bson:"headers,omitempty"`
+	Params      []*httpVariables     `bson:"params,omitempty"`
+	SqlConfig   i.ISqlParamConfig    `bson:"sql_config,omitempty"`
 	Id          string               `bson:"-"`
+	//SqlRepo     i.ISqlParamRepo      `bson:"-"`
 }
 
 func (config *httpRequestConfig) GetId() string {
