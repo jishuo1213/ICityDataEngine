@@ -29,9 +29,10 @@ type ISqlParamConfig interface {
 	QuerySqlParams(ISqlResultParser, IDealRunStatus) error
 }
 
-type ISqlExecConfig interface {
+type ISqlSaveConfig interface {
 	sqlConfig
-	ExecSql()
+	ExecInsert(...interface{}) error
+	Commit() (error)
 }
 
 type IRequestConfig interface {
