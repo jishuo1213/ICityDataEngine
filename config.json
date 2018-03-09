@@ -161,11 +161,11 @@
           "key": [
             {
               "name": "mine",
-              "type": 1
+              "type": "value"
             },
             {
               "name": "access_token",
-              "type": 2
+              "type": "params"
             }
           ]
         },
@@ -257,9 +257,7 @@
       "success_response_config": {
         "response_code": 200,
         "data_type": "jsonObject",
-        "template": {
-          "code": "0000"
-        },
+        "template": "{\"code\": \"0000\"}",
         "do_after": [
           "save",
           "http"
@@ -272,7 +270,35 @@
           "db_ip": "172.22.16.139",
           "port": 3306,
           "db_name": "icity",
-          "sql": "SELECT a.accessToken FROM cust_accesstoken a JOIN cust_customer_check b ON a.custId = b.custId"
+          "sql": "INSERT INTO user(uid,username,age) values(?,?,?)",
+          "insert_template": {
+            "res": [
+              {
+                "uid": "aaa",
+                "username": "bbb",
+                "age": "ccc"
+              },
+              {
+                "uid": "aaa",
+                "username": "bbb",
+                "age": "ccc"
+              }
+            ]
+          },
+          "insert_mapping": [
+            {
+              "name": "uid",
+              "type": "string"
+            },
+            {
+              "name": "username",
+              "type": "string"
+            },
+            {
+              "name": "age",
+              "type": "int"
+            }
+          ]
         },
         "http_config": {
           "type": "http",
@@ -311,5 +337,6 @@
         "retry_interval": 30
       }
     }
-  }
+  },
+  []
 ]

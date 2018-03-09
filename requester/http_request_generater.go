@@ -104,6 +104,8 @@ func (parser *sqlResultParser) Parse(rows *sql.Rows, statusParser i.IDealRunStat
 		var body *bytes.Buffer
 		var requestUrl string
 
+		//bodyParam := make(map[string]string)
+
 		if requestConfig.GetMethod() == constant.Get {
 			data := url.Values{}
 			if requestParams != nil {
@@ -161,6 +163,7 @@ func (parser *sqlResultParser) Parse(rows *sql.Rows, statusParser i.IDealRunStat
 					if err != nil {
 						return err
 					}
+					//bodyParam = jsonBody
 					valueBytes, err := json.Marshal(jsonBody)
 					if err != nil {
 						return errors.New("生成请求失败3")
@@ -174,7 +177,8 @@ func (parser *sqlResultParser) Parse(rows *sql.Rows, statusParser i.IDealRunStat
 		if body != nil {
 			bodyStr = body.String()
 		}
-		requestInfo := bModel.RequestInfo{Method: getMethod(requestConfig.GetMethod()), Url: requestUrl, Headers: requestHeaders, Body: bodyStr, Id: ""}
+		requestInfo := bModel.RequestInfo{Method: getMethod(requestConfig.GetMethod()), Url: requestUrl,
+			Headers: requestHeaders, Body: bodyStr, Id: "", BodyParam: requestParams}
 		requestBytes, err := utils.EncodeObject(requestInfo)
 		if err != nil {
 			return errors.New("序列化请求失败")

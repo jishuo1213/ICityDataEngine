@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"os"
-	"strconv"
 	"fmt"
 )
 
@@ -231,19 +230,20 @@ func TestGetInsertValues(t *testing.T) {
 	saveKeysMaps["description"] = &SaveKey{"description", "string", nil}
 	saveKeysMaps["displayValue"] = &SaveKey{"displayValue", "string", nil}
 
-	res, keys, err := getInsertValues(responseMap, templateMap, saveKeysMaps)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(strconv.Itoa(len(res)) + "================")
+	//res, keys, err := getInsertValues(responseMap, templateMap, saveKeysMaps)
+	fmt.Println(findSameInJsonBody(templateMap, responseMap, true))
+	//if err != nil {
+	//	t.Fatal(err)
+	//}
+	//t.Log(strconv.Itoa(len(res)) + "================")
 	//log.Println(res)
 
 	//log.Println(keys)
 
-	for i, v := range keys {
-		fmt.Print(v)
-		fmt.Print(":")
-		fmt.Print(res[i])
-		fmt.Print("\n")
-	}
+	//for i, v := range keys {
+	//	fmt.Print(v)
+	//	fmt.Print(":")
+	//	fmt.Print(res[i])
+	//	fmt.Print("\n")
+	//}
 }

@@ -24,12 +24,12 @@ func (ConnectDBError) Error() string {
 }
 
 type MySqlConfig struct {
-	UserName    string `bson:"user_name"`
-	PassWord    string `bson:"password"`
-	DBAddress   string `bson:"db_ip"`
-	Port        int    `bson:"port"`
-	DBName      string `bson:"db_name"`
-	SqlSentence string `bson:"sql"`
+	UserName    string `json:"user_name"`
+	PassWord    string `json:"password"`
+	DBAddress   string `json:"db_ip"`
+	Port        int    `json:"port"`
+	DBName      string `json:"db_name"`
+	SqlSentence string `json:"sql"`
 	//QueryParamRepo i.IMySqlParamRepo
 }
 

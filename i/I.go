@@ -16,6 +16,9 @@ type IDealRunStatus func(interface{})
 
 type IRequestInfo interface {
 	GenerateRequest() (*http.Request, error)
+	//GetSaveKeys(saveKeys []*model.SaveKey) string
+	GetHeaders() map[string]string
+	GetBodyParams() map[string]string
 }
 
 type sqlConfig interface {
@@ -47,14 +50,14 @@ type IRequestConfig interface {
 }
 
 type IResponseConfig interface {
-	IsSuccessResponse(response []byte) (bool)
-	IsIgnoreResponse(response []byte) (bool)
-	DealSuccessResponse(body []byte) error
+	IsSuccessResponse(code int, response []byte) (bool)
+	IsIgnoreResponse(code int, response []byte) (bool)
+	DealSuccessResponse(request IRequestInfo, body []byte) error
 	DealFailedRequest(request IRequestInfo) error
 }
 
 type IResponseSaver interface {
-	Save(response []byte) error
+	Save(response []byte, request IRequestInfo) error
 }
 
 //type ISqlResultParser interface {

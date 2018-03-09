@@ -9,22 +9,11 @@ import (
 	"ICityDataEngine/constant"
 	"IcityMessageBus/utils"
 	"IcityMessageBus/model"
-	"net/http"
-	"time"
-	"io/ioutil"
 	"ICityDataEngine/i"
 	"strconv"
 	"log"
 	"sync"
 )
-
-var httpClient *http.Client
-
-func init() {
-	httpClient = &http.Client{
-		Timeout: time.Second * 20,
-	}
-}
 
 type HttpDataEngineJob struct {
 	//jobConfig *config.JobConfig
@@ -129,7 +118,9 @@ func dealRequest(requestChan <-chan *model.RequestInfo, statusParser i.IDealRunS
 			continue
 		}
 
-		resp, err := httpClient.Do(httpRequest)
+		code, body, err := requester.SendHttpRequest(httpRequest)
+		//resp, err := httpClient.Do(httpRequest)
+
 		if err != nil {
 			statusParser(errors.New("send http request failed: request info:" +
 				requestInfo.GetFormatString() + "error:" + err.Error()))
@@ -137,14 +128,16 @@ func dealRequest(requestChan <-chan *model.RequestInfo, statusParser i.IDealRunS
 		}
 
 		statusParser("执行:" + requestInfo.GetFormatString() + " 返回结果:")
-		body, err := ioutil.ReadAll(resp.Body)
-		statusParser("状态码：" + strconv.Itoa(resp.StatusCode) + "返回结果：" + string(body))
-		if ok := config.IsSuccessResponse(body); ok {
-			config.DealSuccessResponse(body)
-		} else if ok = config.IsIgnoreResponse(body); ok {
-			return
-		} else {
-			config.DealFailedRequest(requestInfo)
+		//body, err := ioutil.ReadAll(resp.Body)
+		statusParser("状态码：" + strconv.Itoa(code) + "返回结果：" + string(body))
+		if config != nil {
+			if ok := config.IsSuccessResponse(code, body); ok {
+				config.DealSuccessResponse(requestInfo, code, body)
+			} else if ok = config.IsIgnoreResponse(code, body); ok {
+				return
+			} else {
+				config.DealFailedRequest(requestInfo)
+			}
 		}
 	}
 }
@@ -187,14 +180,14 @@ func ParseConfig(jobConfig *simplejson.Json, id string) (*HttpDataEngineJob, err
 	if err != nil {
 		return nil, errors.New("parallel_num不存在或类型错误")
 	}
-	requestConfig := jobConfig.Get("request")
-	responseJson := jobConfig.Get("response")
+	requestConfig, isHaveRequest := jobConfig.CheckGet("request")
+	if !isHaveRequest {
+		return nil, errors.New("request_config不存在或类型错误")
+	}
+
+	responseJson, isHaveResponse := jobConfig.CheckGet("response")
 
 	var responseConfig i.IResponseConfig
-	if err != nil {
-		//return nil, errors.New("response不存在或类型错误")
-		responseConfig = nil
-	}
 
 	requestType, err := requestConfig.Get("type").String()
 
@@ -204,12 +197,12 @@ func ParseConfig(jobConfig *simplejson.Json, id string) (*HttpDataEngineJob, err
 	var httpRequestConfig *httpRequestConfig
 	switch requestType {
 	case "http":
-		var err error
+		//var err error
 		httpRequestConfig, err = NewHttpRequestConfig(requestConfig, id)
 		if err != nil {
 			return nil, err
 		}
-		if responseJson != nil {
+		if isHaveResponse {
 			responseConfig, err = NewHttpResponseConfig(responseJson, id)
 			if err != nil {
 				return nil, err
